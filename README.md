@@ -26,6 +26,19 @@
 
 
 ### Как запускать
-`python main.py` - для запуска бэкенда
 
-`python init_db.py` - для полной очистки базы данных
+Для запуска бэкенда:
+```commandline
+python -m venv venv
+./venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
+
+Для полной очистки базы данных:
+```commandline
+python -m venv venv
+./venv/bin/activate
+pip install -r requirements.txt
+python init_db.py
+```
