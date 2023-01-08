@@ -92,3 +92,10 @@ class User:
         if len(existed_users.all()) > 0:
             return True
         return False
+
+    @staticmethod
+    async def delete_by_email(conn: AsyncConnection, email: str):
+        """
+        Удаляет пользователя по его email.
+        """
+        await conn.execute(sa.delete(users_table).where(users_table.c.email == email))
