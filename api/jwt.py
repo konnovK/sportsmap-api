@@ -8,8 +8,6 @@ from loguru import logger
 
 from db.models.user import User
 
-JWT_SECRET = 'jwt_secret_tjli4k5ngiuhgze-hb8o65jh'
-
 
 class JWTException(Exception):
     """
