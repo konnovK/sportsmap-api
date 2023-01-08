@@ -3,6 +3,8 @@ from aiohttp_apispec import (
     docs,
 )
 
+from api.jwt import jwt_middleware
+
 
 @docs(
     tags=["Health check"],
@@ -13,6 +15,7 @@ async def ping_handler(request: web.Request) -> web.Response:
     return web.json_response({'ping': 'pong'})
 
 
+@jwt_middleware
 @docs(
     tags=["Health check"],
     summary="Пинг сервера с авторизацией",

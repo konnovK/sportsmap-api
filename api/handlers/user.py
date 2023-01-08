@@ -4,7 +4,7 @@ from aiohttp_apispec import (
     request_schema,
 )
 
-from api.jwt import create_jwt, get_email_from_access_token, refresh_jwt
+from api.jwt import jwt_middleware
 from api.schemas.error import ErrorResponse
 from api.schemas.user import UserResponse, CreateUserRequest, LoginRequest, LoginResponse, RefreshTokenRequest
 from db.models.user import User
@@ -75,7 +75,7 @@ async def login(request: web.Request) -> web.Response:
         if not user:
             raise web.HTTPException(text='wrong email or password')
 
-    access_token, refresh_token, expires_in = create_jwt(user.email)
+    access_token, refresh_token, expires_in = request.app['jwt'].create_jwt(user.email)
 
     return web.json_response(LoginResponse().dump({
         "id": user.id,
@@ -110,7 +110,7 @@ async def refresh_token(request: web.Request) -> web.Response:
     access_token = data.get('access_token')
     refresh_token = data.get('refresh_token')
 
-    user_email = get_email_from_access_token(access_token)
+    user_email = request.app['jwt'].get_email_from_access_token(access_token)
     if not user_email:
         raise web.HTTPException(text='wrong access token')
 
@@ -119,7 +119,7 @@ async def refresh_token(request: web.Request) -> web.Response:
         if not user:
             raise web.HTTPException(text='wrong access token')
 
-    access_token, refresh_token, expires_in = refresh_jwt(access_token, refresh_token)
+    access_token, refresh_token, expires_in = request.app['jwt'].refresh_jwt(access_token, refresh_token)
     if access_token is None:
         raise web.HTTPException(text='wrong refresh token')
 
@@ -135,6 +135,7 @@ async def refresh_token(request: web.Request) -> web.Response:
     }))
 
 
+@jwt_middleware
 @docs(
     tags=["Admin"],
     summary="Удалить себя",
