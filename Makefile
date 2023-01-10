@@ -1,4 +1,12 @@
 include .env
+# В .env определены следующие переменные:
+# API_PORT
+# API_DB_USER
+# API_DB_PASSWORD
+# API_DB_HOST
+# API_DB_PORT
+# API_DEV_DB_NAME
+# API_TEST_DB_NAME
 
 PROJECT_NAME=sportsmap_api
 VERSION=0
