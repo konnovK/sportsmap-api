@@ -135,7 +135,6 @@ async def refresh_token(request: web.Request) -> web.Response:
     }))
 
 
-
 @docs(
     tags=["Admin"],
     summary="Удалить себя",

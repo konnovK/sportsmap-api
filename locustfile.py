@@ -34,7 +34,7 @@ class LoginUser(HttpUser):
         })
         assert resp.status_code == 200, resp.status_code
         body = resp.json()
-        access_token, refresh_token = body['access_token'], body['access_token']
+        access_token = body['access_token']
 
         resp = self.client.delete(
             "/api/admin/users",
