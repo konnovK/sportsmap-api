@@ -135,7 +135,7 @@ async def refresh_token(request: web.Request) -> web.Response:
     }))
 
 
-@jwt_middleware
+
 @docs(
     tags=["Admin"],
     summary="Удалить себя",
@@ -150,6 +150,7 @@ async def refresh_token(request: web.Request) -> web.Response:
         }
     },
 )
+@jwt_middleware
 async def delete_self(request: web.Request) -> web.Response:
     user_email = request.app['email']
     async with request.app['db'].begin() as conn:
