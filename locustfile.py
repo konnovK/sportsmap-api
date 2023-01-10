@@ -13,7 +13,7 @@ class PingUser(HttpUser):
 
 class LoginUser(HttpUser):
     @task
-    def reg_log_del(self):
+    def register_login_updates_delete(self):
         now = time.time()
         email = f"user{now}{uuid.uuid4()}@example.com"
         password = "hackme"
