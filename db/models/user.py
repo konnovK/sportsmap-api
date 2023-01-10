@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from db.schema import users_table
+from db.schema import users_table, UserGroups
 from db.utils import hash_password
 
 
@@ -105,3 +105,16 @@ class User:
         Удаляет пользователя по его email.
         """
         await conn.execute(sa.delete(users_table).where(users_table.c.email == email))
+
+    @staticmethod
+    async def set_admin(conn: AsyncConnection, email: str):
+        await conn.execute(sa.update(users_table).where(users_table.c.email == email).values(group=UserGroups.Admin))
+
+    @staticmethod
+    async def set_none_group(conn: AsyncConnection, email: str):
+        await conn.execute(sa.update(users_table).where(users_table.c.email == email).values(group=None))
+
+    @staticmethod
+    async def check_is_admin(conn: AsyncConnection, email: str):
+        user = (await conn.execute(sa.select(users_table).where(users_table.c.email == email))).first()
+        return user[5] == UserGroups.Admin
