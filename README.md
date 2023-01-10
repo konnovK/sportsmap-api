@@ -31,24 +31,24 @@
 
 ## Как запускать
 
+Для запуска линтера:
+```commandline
+make lint
+```
+
 Для запуска тестов:
 ```commandline
-python -m venv venv
-./venv/bin/activate
-pip install -r requirements.txt
-pytest
+make test
 ```
 
 Для запуска бэкенда:
 ```commandline
-python -m venv venv
-./venv/bin/activate
-pip install -r requirements.txt
-python main.py
+make run
 ```
 
-Для полной очистки базы данных:
+Для полной очистки базы данных ~~пожалуйста не запускайте~~: 
 ```commandline
+echo 'я прогаю уже 40 часов без еды и воды помогите'
 python -m venv venv
 ./venv/bin/activate
 pip install -r requirements.txt
