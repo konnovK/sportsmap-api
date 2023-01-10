@@ -11,7 +11,7 @@ async def get_db_engine(config: Config) -> AsyncEngine:
     """
      Получение sqlalchemy async engine, исходя из содержания конфига
     """
-    logger.info(f'get sqlalchemy async database engine')
+    logger.info('get sqlalchemy async database engine')
     db_conn_str = f"postgresql+asyncpg://{config.API_DB_USER}:{config.API_DB_PASSWORD}" \
                   f"@{config.API_DB_HOST}:{config.API_DB_PORT}/{config.API_DB_NAME}"
 
@@ -35,16 +35,16 @@ async def setup_db(app: web.Application, config: Config):
     """
      Подключение к БД и отключение от БД для приложения
     """
-    logger.info(f'connecting API to DB')
+    logger.info('connecting API to DB')
     engine = await get_db_engine(config)
     app['db'] = engine
-    logger.info(f'connected API to DB successfully')
+    logger.info('connected API to DB successfully')
     try:
         yield
     finally:
-        logger.info(f'disconnect API from DB')
+        logger.info('disconnect API from DB')
         await app['db'].dispose()
-        logger.info(f'disconnected API from DB successfully')
+        logger.info('disconnected API from DB successfully')
 
 
 async def debug_db_init(config: Config):

@@ -25,8 +25,8 @@ class TestUser:
             assert await User.exists(conn, test_user1['email']), 'Создали пользователя, он должен существовать'
             assert not await User.get_by_email(conn, test_user1['email']) is None
             assert (
-                    (await User.get_by_email(conn, test_user1['email'])).email ==
-                    (await User.get_by_email_and_password(conn, test_user1['email'], test_user1['password'])).email
+                (await User.get_by_email(conn, test_user1['email'])).email ==
+                (await User.get_by_email_and_password(conn, test_user1['email'], test_user1['password'])).email
             )
 
         test_user2 = {
@@ -42,8 +42,8 @@ class TestUser:
                 'Пользователь без first_name, last_name должен существовать'
             assert not await User.get_by_email(conn, test_user2['email']) is None
             assert (
-                    (await User.get_by_email(conn, test_user2['email'])).email ==
-                    (await User.get_by_email_and_password(conn, test_user2['email'], test_user2['password'])).email
+                (await User.get_by_email(conn, test_user2['email'])).email ==
+                (await User.get_by_email_and_password(conn, test_user2['email'], test_user2['password'])).email
             )
 
     @pytest.mark.asyncio

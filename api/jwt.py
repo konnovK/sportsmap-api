@@ -35,7 +35,7 @@ class JWT:
         try:
             jwt_secret = self.JWT_SECRET
             return jwt.decode(token, jwt_secret, algorithms=["HS256"])
-        except PyJWTError as err:
+        except PyJWTError:
             raise JWTException
 
     def create_jwt(self, email: str) -> (str, str, int):
@@ -118,7 +118,7 @@ def jwt_middleware(handler):
     :param handler: обработчик запроса
     """
     async def wrapper(request: web.Request):
-        logger.debug(f'JWT Check')
+        logger.debug('JWT Check')
         logger.debug(request.url.path)
         logger.debug(f"HEADER: Authorization: {request.headers.get('Authorization')}")
         if not request.headers.get('Authorization'):
