@@ -1,3 +1,4 @@
+import random
 import time
 import uuid
 
@@ -16,15 +17,20 @@ class LoginUser(HttpUser):
         now = time.time()
         email = f"user{now}{uuid.uuid4()}@example.com"
         password = "hackme"
-        resp = self.client.post("/api/admin/users", json={
+        user = {
             "email": email,
             "password": password
-        })
+        }
+        if random.randint(1, 10) > 4:
+            user['first_name'] = str(uuid.uuid4())
+            user['last_name'] = str(uuid.uuid4())
+
+        resp = self.client.post("/api/admin/users", json=user)
         assert resp.status_code == 201, resp.status_code
 
         resp = self.client.post("/api/admin/login", json={
-            "email": email,
-            "password": password
+            "email": user['email'],
+            "password": user['password']
         })
         assert resp.status_code == 200, resp.status_code
         body = resp.json()
