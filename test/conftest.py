@@ -5,7 +5,6 @@ import pytest
 from api_config import get_config
 from db.schema import metadata
 from db.utils import get_db_engine
-from test import TEST_DB_NAME
 
 
 @pytest.fixture()
