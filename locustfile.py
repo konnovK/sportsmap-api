@@ -45,6 +45,7 @@ class LoginUser(HttpUser):
                 "password": 'justanewpassword'
             }
         )
+        assert resp.status_code == 200, resp.status_code
         resp = self.client.put(
             "/api/admin/users",
             headers={
@@ -54,6 +55,7 @@ class LoginUser(HttpUser):
                 "first_name": 'IVAN'
             }
         )
+        assert resp.status_code == 200, resp.status_code
         resp = self.client.put(
             "/api/admin/users",
             headers={
