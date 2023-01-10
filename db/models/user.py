@@ -27,14 +27,14 @@ class User:
         """
         password_hash = hash_password(password)
         selected_user = (await conn.execute(sa.select(users_table).where(
-            users_table.c.email == email and users_table.c.password_hash == password_hash
+            users_table.c.email == email
         ))).first()
         if not selected_user:
             return None
 
         user_group = selected_user[5]
 
-        return User(
+        user = User(
             id=selected_user[0],
             first_name=selected_user[1],
             last_name=selected_user[2],
@@ -42,6 +42,11 @@ class User:
             password_hash=selected_user[4],
             group=user_group,
         )
+
+        if user.password_hash != password_hash:
+            return None
+
+        return user
 
     @staticmethod
     async def get_by_email(conn: AsyncConnection, email: str) -> User | None:
@@ -118,3 +123,45 @@ class User:
     async def check_is_admin(conn: AsyncConnection, email: str):
         user = (await conn.execute(sa.select(users_table).where(users_table.c.email == email))).first()
         return user[5] == UserGroups.Admin
+
+    @staticmethod
+    async def update_user(
+            conn: AsyncConnection,
+            email: str,
+            password: str = None,
+            first_name: str = None,
+            last_name: str = None
+    ) -> User | None:
+        """
+        Обновляет поля password, first_name, last_name у пользователя с email
+        :return: Обновленный пользователь, или None, если никого не обновили
+        """
+        selected_user = (await conn.execute(sa.select(users_table).where(users_table.c.email == email))).first()
+        if not selected_user:
+            return None
+        new_user = {}
+        if password:
+            new_user['password_hash'] = hash_password(password)
+        if first_name:
+            new_user['first_name'] = first_name
+        if last_name:
+            new_user['last_name'] = last_name
+        updated_user = (await conn.execute(
+            sa.update(users_table).where(users_table.c.email == email).values(**new_user).returning(
+                users_table.c.id,
+                users_table.c.email,
+                users_table.c.first_name,
+                users_table.c.last_name,
+                users_table.c.password_hash,
+                users_table.c.group
+            )
+        )).first()
+
+        return User(
+            id=updated_user[0],
+            email=updated_user[1],
+            first_name=updated_user[2],
+            last_name=updated_user[3],
+            password_hash=updated_user[4],
+            group=updated_user[5],
+        )

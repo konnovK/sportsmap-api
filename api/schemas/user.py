@@ -35,3 +35,9 @@ class LoginResponse(Schema):
 class RefreshTokenRequest(Schema):
     access_token = fields.String(required=True, nullable=False)
     refresh_token = fields.String(required=True, nullable=False)
+
+
+class UpdateSelfRequest(Schema):
+    first_name = fields.String()
+    last_name = fields.String()
+    password = fields.String()

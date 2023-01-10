@@ -2,7 +2,7 @@ from .ping import ping_handler, auth_ping_handler
 from .user import (
     register,
     login,
-    # change_user,
+    update_self,
     delete_self,
     refresh_token,
     # confirmed_password_reset,
@@ -22,7 +22,7 @@ ROUTES = [
 
     web.post('/api/admin/users', register),
     web.delete('/api/admin/users', delete_self),
-    # web.put('/api/admin/users', change_user),
+    web.put('/api/admin/users', update_self),
     #
     # web.post('/api/admin/password/reset/link', send_password_reset_link),
     # web.post('/api/admin/password/reset/confirmed', confirmed_password_reset),

@@ -6,7 +6,8 @@ from aiohttp_apispec import (
 
 from api.jwt import jwt_middleware
 from api.schemas.error import ErrorResponse
-from api.schemas.user import UserResponse, CreateUserRequest, LoginRequest, LoginResponse, RefreshTokenRequest
+from api.schemas.user import UserResponse, CreateUserRequest, LoginRequest, LoginResponse, RefreshTokenRequest, \
+    UpdateSelfRequest
 from db.models.user import User
 
 
@@ -158,3 +159,43 @@ async def delete_self(request: web.Request) -> web.Response:
             raise web.HTTPException(text='user with this email not found')
         await User.delete_by_email(conn, user_email)
     return web.json_response(status=204)
+
+
+@docs(
+    tags=["Admin"],
+    summary="Обновить инфу о себе",
+    description="Обновить инфу о себе. Требуется аутентификация.",
+    responses={
+        200: {
+            "schema": UserResponse,
+            "description": "Пользователь успешно обновлен"
+        },
+        400: {
+            "schema": ErrorResponse,
+            "description": "Ошибка входных данных"
+        }
+    },
+)
+@request_schema(UpdateSelfRequest)
+@jwt_middleware
+async def update_self(request: web.Request) -> web.Response:
+    user_email = request.app['email']
+    data = UpdateSelfRequest().load(await request.json())
+
+    update_data = {}
+    if data.get('first_name'):
+        update_data['first_name'] = data.get('first_name')
+    if data.get('last_name'):
+        update_data['last_name'] = data.get('last_name')
+    if data.get('password'):
+        update_data['password'] = data.get('password')
+
+    async with request.app['db'].begin() as conn:
+        user = await User.update_user(conn, user_email, **update_data)
+    return web.json_response(UserResponse().dump({
+        "id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "group": user.group
+    }))

@@ -28,6 +28,7 @@ class TestUser:
                 (await User.get_by_email(conn, test_user1['email'])).email ==
                 (await User.get_by_email_and_password(conn, test_user1['email'], test_user1['password'])).email
             )
+            assert not await User.get_by_email_and_password(conn, test_user1['email'], 'INVALID')
 
         test_user2 = {
             'email': 'konnovk2@ya.ru',
@@ -92,3 +93,40 @@ class TestUser:
             # Уберем ему группу
             await User.set_none_group(conn, test_user['email'])
             assert not await User.check_is_admin(conn, test_user['email'])
+
+    @pytest.mark.asyncio
+    async def test_user_update(self, setup_db):
+        engine = setup_db
+        old_password = 'qwerty'
+        new_password = 'hackme'
+        test_user = {
+            'email': 'konnovk1@ya.ru',
+            'password': old_password,
+            'first_name': 'konnovk1',
+            'last_name': 'kon',
+        }
+        async with engine.begin() as conn:
+            await User.create_user(
+                conn,
+                **test_user
+            )
+            assert await User.get_by_email_and_password(conn, test_user['email'], old_password) is not None
+
+        async with engine.begin() as conn:
+            await User.update_user(
+                conn,
+                email=test_user['email'],
+                password=new_password,
+                last_name='IVANOV'
+            )
+            assert await User.get_by_email_and_password(conn, test_user['email'], new_password) is not None
+            assert await User.get_by_email_and_password(conn, test_user['email'], old_password) is None
+            assert (await User.get_by_email(conn, test_user['email'])).last_name == 'IVANOV'
+
+        async with engine.begin() as conn:
+            invalid_updated_user = await User.update_user(
+                conn,
+                email='INVALID',
+                last_name='IVANOV'
+            )
+            assert invalid_updated_user is None

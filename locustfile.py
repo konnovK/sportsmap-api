@@ -36,6 +36,35 @@ class LoginUser(HttpUser):
         body = resp.json()
         access_token = body['access_token']
 
+        resp = self.client.put(
+            "/api/admin/users",
+            headers={
+                'Authorization': f'Bearer {access_token}'
+            },
+            json={
+                "password": 'justanewpassword'
+            }
+        )
+        resp = self.client.put(
+            "/api/admin/users",
+            headers={
+                'Authorization': f'Bearer {access_token}'
+            },
+            json={
+                "first_name": 'IVAN'
+            }
+        )
+        resp = self.client.put(
+            "/api/admin/users",
+            headers={
+                'Authorization': f'Bearer {access_token}'
+            },
+            json={
+                "last_name": 'IVANOV'
+            }
+        )
+        assert resp.status_code == 200, resp.status_code
+
         resp = self.client.delete(
             "/api/admin/users",
             headers={
