@@ -22,8 +22,11 @@ from db.models.user import User
         },
         400: {
             "schema": ErrorResponse,
-            "description": "Ошибка валидации входных данных, или пользователь с таким email уже существует"
+            "description": "Ошибка валидации входных данных"
         },
+        409: {
+            "description": "Пользователь с таким email уже существует"
+        }
     },
 )
 @request_schema(CreateUserRequest)
@@ -36,7 +39,7 @@ async def register(request: web.Request) -> web.Response:
 
     async with request.app['db'].begin() as conn:
         if await User.exists(conn, user_email):
-            raise web.HTTPException(text='user exists')
+            return web.json_response(status=409)
         user_id = await User.create_user(conn, user_email, user_password, user_first_name, user_last_name)
 
     return web.json_response(UserResponse().dump({
