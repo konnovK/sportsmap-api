@@ -1,5 +1,4 @@
 # SportsMap API
-![https://github.com/konnovK/sportsmap-api/actions/workflows/CI.yml](https://github.com/konnovK/sportsmap-api/workflows/CI/badge.svg)
 
 Бэкенд для веб приложения с картой спортивных объектов СПб.
 
