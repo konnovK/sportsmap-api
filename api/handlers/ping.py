@@ -15,7 +15,6 @@ async def ping_handler(request: web.Request) -> web.Response:
     return web.json_response({'ping': 'pong'})
 
 
-
 @docs(
     tags=["Health check"],
     summary="Пинг сервера с авторизацией",
