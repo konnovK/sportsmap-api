@@ -65,7 +65,13 @@ class User:
         )
 
     @staticmethod
-    async def create_user(conn: AsyncConnection, first_name: str, last_name: str, email: str, password: str) -> str:
+    async def create_user(
+            conn: AsyncConnection,
+            email: str,
+            password: str,
+            first_name: str = None,
+            last_name: str = None
+    ) -> str:
         """
         Создает в БД пользователя.
         :returns: id созданного пользователя

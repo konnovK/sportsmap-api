@@ -39,7 +39,7 @@ async def register(request: web.Request) -> web.Response:
     async with request.app['db'].begin() as conn:
         if await User.exists(conn, user_email):
             return web.json_response(status=409)
-        user_id = await User.create_user(conn, user_first_name, user_last_name, user_email, user_password)
+        user_id = await User.create_user(conn, user_email, user_password, user_first_name, user_last_name)
 
     return web.json_response(UserResponse().dump({
         "id": user_id,
