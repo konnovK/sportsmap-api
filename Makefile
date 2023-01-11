@@ -14,8 +14,10 @@ VERSION=0
 PYTHON_ENV=venv
 
 PYTHON_BIN=$(PYTHON_ENV)/bin
+PYTHON_EXEC=python3
 ifeq ($(OS), Windows_NT)
 	PYTHON_BIN=$(PYTHON_ENV)/Scripts
+	PYTHON_EXEC=python
 endif
 
 all:
@@ -50,4 +52,7 @@ run: test
 	API_DB_HOST=$(API_DB_HOST) \
 	API_DB_PORT=$(API_DB_PORT) \
 	API_DB_NAME=$(API_DEV_DB_NAME) \
-	$(PYTHON_BIN)/python main.py
+	$(PYTHON_BIN)/$(PYTHON_EXEC) main.py
+
+runprod:
+	python3 main.py
