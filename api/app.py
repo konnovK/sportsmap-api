@@ -38,8 +38,9 @@ def create_app(config: Config) -> web.Application:
     setup_aiohttp_apispec(
         app=app,
         title="SportsMap API",
-        url="/api/docs/swagger.json",
+        url="/swagger/swagger.json",
         swagger_path="/",
+        static_path="/swagger"
     )
 
     # Настройка CORS

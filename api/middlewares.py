@@ -12,7 +12,7 @@ async def error_middleware(request: web.Request, handler):
     except web.HTTPUnauthorized as err:
         logger.debug(err)
         raise err
-    except web.HTTPException as err:
+    except web.HTTPBadRequest as err:
         # Исключения которые представляют из себя HTTP ответ, были брошены
         # осознанно для отображения клиенту.
         logger.debug(err)
