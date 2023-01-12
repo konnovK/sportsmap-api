@@ -61,7 +61,7 @@ test: lint postgrestest
 	API_DB_HOST=$(API_DB_HOST) \
 	API_DB_PORT=$(API_DB_PORT) \
 	API_DB_NAME=$(API_TEST_DB_NAME) \
-	$(PYTHON_BIN)/pytest -W ignore::DeprecationWarning
+	$(PYTHON_BIN)/pytest -W ignore::DeprecationWarning --cov
 
 run: postgresdev
 	API_PORT=$(API_PORT) \

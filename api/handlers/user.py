@@ -4,7 +4,7 @@ from aiohttp_apispec import (
     request_schema,
 )
 
-from api.jwt import jwt_middleware
+from api.jwt import jwt_middleware, JWTException
 from api.schemas.error import ErrorResponse
 from api.schemas.user import UserResponse, CreateUserRequest, LoginRequest, LoginResponse, RefreshTokenRequest, \
     UpdateSelfRequest
@@ -74,7 +74,7 @@ async def login(request: web.Request) -> web.Response:
     async with request.app['db'].begin() as conn:
         user = await User.get_by_email_and_password(conn, user_email, user_password)
         if not user:
-            raise web.HTTPException(text='wrong email or password')
+            raise web.HTTPBadRequest(text='wrong email or password')
 
     access_token, refresh_token, expires_in = request.app['jwt'].create_jwt(user.email)
 
@@ -110,19 +110,24 @@ async def refresh_token(request: web.Request) -> web.Response:
     data = RefreshTokenRequest().load(await request.json())
     access_token = data.get('access_token')
     refresh_token = data.get('refresh_token')
-
-    user_email = request.app['jwt'].get_email_from_access_token(access_token)
+    try:
+        user_email = request.app['jwt'].get_email_from_access_token(access_token)
+    except JWTException:
+        raise web.HTTPBadRequest(text='wrong access token')
     if not user_email:
-        raise web.HTTPException(text='wrong access token')
+        raise web.HTTPBadRequest(text='wrong access token')
 
     async with request.app['db'].begin() as conn:
         user = await User.get_by_email(conn, user_email)
         if not user:
-            raise web.HTTPException(text='wrong access token')
+            raise web.HTTPBadRequest(text='wrong access token')
 
-    access_token, refresh_token, expires_in = request.app['jwt'].refresh_jwt(access_token, refresh_token)
+    try:
+        access_token, refresh_token, expires_in = request.app['jwt'].refresh_jwt(access_token, refresh_token)
+    except JWTException:
+        raise web.HTTPBadRequest(text='wrong refresh token')
     if access_token is None:
-        raise web.HTTPException(text='wrong refresh token')
+        raise web.HTTPBadRequest(text='wrong refresh token')
 
     return web.json_response(LoginResponse().dump({
         "id": user.id,

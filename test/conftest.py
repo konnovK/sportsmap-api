@@ -26,7 +26,7 @@ async def setup_db(loop):
 
 
 @pytest.fixture
-def cli(loop, aiohttp_client):
+def cli(loop, aiohttp_client, setup_db):
     config = get_config()
     app = create_app(config)
     return loop.run_until_complete(aiohttp_client(app))
