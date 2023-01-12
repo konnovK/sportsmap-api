@@ -1,6 +1,6 @@
 import pytest
 
-from db.models.user import User
+from db.models.user import User, UserAlreadyExistsException
 
 
 class TestUser:
@@ -8,9 +8,11 @@ class TestUser:
     async def test_user_create(self, setup_db):
         engine = setup_db
 
+        # В пустой бд не должно быть пользователя INVALID_EMAIL
         async with engine.begin() as conn:
-            assert not await User.exists(conn, 'INVALID_EMAIL'), 'В пустой бд не должно быть пользователя INVALID_EMAIL'
+            assert not await User.exists(conn, 'INVALID_EMAIL')
 
+        # Создание обычного пользователя
         test_user1 = {
             'email': 'konnovk1@ya.ru',
             'password': 'qwerty',
@@ -22,14 +24,10 @@ class TestUser:
                 conn,
                 **test_user1
             )
-            assert await User.exists(conn, test_user1['email']), 'Создали пользователя, он должен существовать'
-            assert not await User.get_by_email(conn, test_user1['email']) is None
-            assert (
-                (await User.get_by_email(conn, test_user1['email'])).email ==
-                (await User.get_by_email_and_password(conn, test_user1['email'], test_user1['password'])).email
-            )
-            assert not await User.get_by_email_and_password(conn, test_user1['email'], 'INVALID')
 
+            assert await User.exists(conn, test_user1['email'])
+
+        # Создание пользователя без first_name, last_name
         test_user2 = {
             'email': 'konnovk2@ya.ru',
             'password': 'qwerty',
@@ -39,13 +37,58 @@ class TestUser:
                 conn,
                 **test_user2
             )
-            assert await User.exists(conn, test_user2['email']), \
-                'Пользователь без first_name, last_name должен существовать'
-            assert not await User.get_by_email(conn, test_user2['email']) is None
-            assert (
-                (await User.get_by_email(conn, test_user2['email'])).email ==
-                (await User.get_by_email_and_password(conn, test_user2['email'], test_user2['password'])).email
+            assert await User.exists(conn, test_user2['email'])
+
+        # Создание пользователя, который уже должен существовать
+        async with engine.begin() as conn:
+            with pytest.raises(UserAlreadyExistsException):
+                await User.create_user(
+                    conn,
+                    **test_user2
+                )
+
+        # Создание пользователя с паролем-числом
+        test_user3 = {
+            'email': 'konnovk3@ya.ru',
+            'password': 12345,
+        }
+        async with engine.begin() as conn:
+            await User.create_user(
+                conn,
+                **test_user3
             )
+            assert await User.exists(conn, test_user3['email'])
+
+    @pytest.mark.asyncio
+    async def test_user_get(self, setup_db):
+        engine = setup_db
+
+        async with engine.begin() as conn:
+            # Не созданный пользователь не должен быть в базе
+            assert await User.get_by_email(conn, 'INVALID') is None
+
+            # Не созданный пользователь не должен быть в базе
+            assert (await User.get_by_email_and_password(conn, 'INVALID', 'INVALID')) is None
+
+        test_user1 = {
+            'email': 'konnovk1@ya.ru',
+            'password': 'qwerty',
+        }
+
+        async with engine.begin() as conn:
+            created_user_id = await User.create_user(
+                conn,
+                **test_user1
+            )
+            # Созданный пользователь должен быть в базе, его можно получить по мэйлу
+            assert (await User.get_by_email(conn, test_user1['email'])).id == created_user_id
+            # Созданный пользователь должен быть в базе, его можно получить по мэйлу и паролю
+            assert (
+                (await User.get_by_email_and_password(conn, test_user1['email'], test_user1['password'])).id
+                == created_user_id
+            )
+            # Неправильный пароль не должен давать пользователя
+            assert await User.get_by_email_and_password(conn, test_user1['email'], 'INVALID') is None
 
     @pytest.mark.asyncio
     async def test_user_delete(self, setup_db):

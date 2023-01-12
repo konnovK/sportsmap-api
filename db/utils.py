@@ -67,4 +67,4 @@ def hash_password(password: str) -> str:
     :return: sha256 хеш от пароля
     """
     from hashlib import sha256
-    return sha256(password.encode()).hexdigest()
+    return sha256(str(password).encode()).hexdigest()

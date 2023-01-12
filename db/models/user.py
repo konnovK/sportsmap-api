@@ -5,9 +5,14 @@ from dataclasses import dataclass
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.exc import IntegrityError
 
 from db.schema import users_table, UserGroups
 from db.utils import hash_password
+
+
+class UserAlreadyExistsException(Exception):
+    pass
 
 
 @dataclass
@@ -83,15 +88,18 @@ class User:
         """
         user_id = str(uuid.uuid4())
         password_hash = hash_password(password)
-        await conn.execute(
-            sa.insert(users_table).values(
-                id=user_id,
-                first_name=first_name,
-                last_name=last_name,
-                email=email,
-                password_hash=password_hash
+        try:
+            await conn.execute(
+                sa.insert(users_table).values(
+                    id=user_id,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password_hash=password_hash
+                )
             )
-        )
+        except IntegrityError:
+            raise UserAlreadyExistsException
         return user_id
 
     @staticmethod
