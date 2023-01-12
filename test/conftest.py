@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from api.app import create_app
 from api_config import get_config
 from db.schema import metadata
 from db.utils import get_db_engine
@@ -22,3 +23,10 @@ async def setup_db(loop):
     yield engine
     async with engine.begin() as conn:
         await conn.run_sync(metadata.drop_all)
+
+
+@pytest.fixture
+def cli(loop, aiohttp_client):
+    config = get_config()
+    app = create_app(config)
+    return loop.run_until_complete(aiohttp_client(app))
