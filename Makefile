@@ -26,6 +26,8 @@ endif
 
 all:
 	@echo "make devenv      - Создать окружение разработки"
+	@echo "make postgres    - Создать Docker контейнеры с базами данных для тестов и разработки"
+	@echo "make migrate     - Накатить миграции на базы данных для тестов и разработки"
 	@echo "make lint        - Проверить код линтером pylama"
 	@echo "make test        - Запустить тесты (Нужен Docker)"
 	@echo "make run         - Запустить API (Нужен Docker)"
@@ -52,6 +54,18 @@ postgres:
 		--publish $(API_TEST_DB_PORT):5432 postgres
 	@sleep 2
 
+migrate:
+	$(PYTHON_BIN)/$(PYTHON_EXEC) -m db --db-user $(API_DEV_DB_USER) \
+ 		--db-password $(API_DEV_DB_PASSWORD) \
+ 		--db-host $(API_DEV_DB_HOST) \
+ 		--db-port $(API_DEV_DB_PORT) \
+ 		--db-name $(API_DEV_DB_NAME) upgrade head
+	$(PYTHON_BIN)/$(PYTHON_EXEC) -m db --db-user $(API_TEST_DB_USER) \
+		--db-password $(API_TEST_DB_PASSWORD) \
+		--db-host $(API_TEST_DB_HOST) \
+		--db-port $(API_TEST_DB_PORT) \
+		--db-name $(API_TEST_DB_NAME) upgrade head
+
 lint:
 	$(PYTHON_BIN)/pylama
 
@@ -63,15 +77,6 @@ test: lint
 	API_DB_PORT=$(API_TEST_DB_PORT) \
 	API_DB_NAME=$(API_TEST_DB_NAME) \
 	$(PYTHON_BIN)/pytest -W ignore::DeprecationWarning --cov-report term-missing --cov
-
-clear_db:
-	API_PORT=$(API_PORT) \
-	API_DB_USER=$(API_DEV_DB_USER) \
-	API_DB_PASSWORD=$(API_DEV_DB_PASSWORD) \
-	API_DB_HOST=$(API_DEV_DB_HOST) \
-	API_DB_PORT=$(API_DEV_DB_PORT) \
-	API_DB_NAME=$(API_DEV_DB_NAME) \
-	$(PYTHON_BIN)/$(PYTHON_EXEC) init_db.py
 
 run:
 	API_PORT=$(API_PORT) \
