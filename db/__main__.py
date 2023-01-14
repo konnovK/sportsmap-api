@@ -1,3 +1,15 @@
+"""
+Модуль для миграций
+
+Пример использования:
+
+python3 -m db --db-user $(API_DEV_DB_USER) \
+    --db-password $(API_DEV_DB_PASSWORD) \
+    --db-host $(API_DEV_DB_HOST) \
+    --db-port $(API_DEV_DB_PORT) \
+    --db-name $(API_DEV_DB_NAME) upgrade head
+"""
+
 import argparse
 import os
 from pathlib import Path

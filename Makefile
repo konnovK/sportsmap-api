@@ -42,15 +42,23 @@ devenv:
 postgres:
 	docker stop $(API_DEV_DB_NAME) || true
 	docker stop $(API_TEST_DB_NAME) || true
+
+	docker stop $(PROJECT_NAME) || true
+
+	docker network rm $(PROJECT_NAME) || true
+	docker network create $(PROJECT_NAME)
+
 	docker run --rm --detach --name=$(API_DEV_DB_NAME) \
 		--env POSTGRES_USER=$(API_DEV_DB_USER) \
 		--env POSTGRES_PASSWORD=$(API_DEV_DB_PASSWORD) \
 		--env POSTGRES_DB=$(API_DEV_DB_NAME) \
+		--network $(PROJECT_NAME) \
 		--publish $(API_DEV_DB_PORT):5432 postgres
 	docker run --rm --detach --name=$(API_TEST_DB_NAME) \
 		--env POSTGRES_USER=$(API_TEST_DB_USER) \
 		--env POSTGRES_PASSWORD=$(API_TEST_DB_PASSWORD) \
 		--env POSTGRES_DB=$(API_TEST_DB_NAME) \
+		--network $(PROJECT_NAME) \
 		--publish $(API_TEST_DB_PORT):5432 postgres
 	@sleep 2
 
@@ -86,3 +94,18 @@ run:
 	API_DB_PORT=$(API_DEV_DB_PORT) \
 	API_DB_NAME=$(API_DEV_DB_NAME) \
 	$(PYTHON_BIN)/$(PYTHON_EXEC) main.py
+
+build:
+	API_PORT=$(API_PORT) \
+	docker build --tag=$(PROJECT_NAME):$(VERSION) .
+
+docker:
+	docker stop $(PROJECT_NAME) || true
+	docker run --rm --detach --name $(PROJECT_NAME) \
+	--env API_DB_USER=$(API_DEV_DB_USER) \
+	--env API_DB_PASSWORD=$(API_DEV_DB_PASSWORD) \
+	--env API_DB_HOST=$(API_DEV_DB_NAME) \
+	--env API_DB_PORT=$(API_DEV_DB_PORT) \
+	--env API_DB_NAME=$(API_DEV_DB_NAME) \
+	--network $(PROJECT_NAME) \
+	--publish $(API_PORT):$(API_PORT) $(PROJECT_NAME):$(VERSION)
