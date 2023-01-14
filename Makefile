@@ -74,6 +74,13 @@ migrate:
 		--db-port $(API_TEST_DB_PORT) \
 		--db-name $(API_TEST_DB_NAME) upgrade head
 
+make_migration:
+	$(PYTHON_BIN)/$(PYTHON_EXEC) -m db --db-user $(API_DEV_DB_USER) \
+ 		--db-password $(API_DEV_DB_PASSWORD) \
+ 		--db-host $(API_DEV_DB_HOST) \
+ 		--db-port $(API_DEV_DB_PORT) \
+ 		--db-name $(API_DEV_DB_NAME) revision --message="one more migration" --autogenerate
+
 lint:
 	$(PYTHON_BIN)/pylama
 

@@ -71,7 +71,6 @@ class FacilityTypes(enum.Enum):
 
 
 class FacilityPropertyForms(enum.Enum):
-    Unknown = 'Unknown'
     RussianFederationSubject = 'RussianFederationSubject'
     Federal = 'Federal'
     Municipal = 'Municipal'
@@ -100,12 +99,12 @@ facilities_table = sa.Table(
     'facilities',
     metadata,
     sa.Column('id', sa.String, primary_key=True, nullable=False),
-    sa.Column('type', sa.Enum(FacilityTypes), nullable=False),  # тип объекта
+    sa.Column('type', sa.Enum(FacilityTypes)),  # тип объекта
     sa.Column('name', sa.String, nullable=False, unique=True),  # имя объекта
     sa.Column('x', sa.Float, nullable=False),  # КООРДИНАТА X
     sa.Column('y', sa.Float, nullable=False),  # КООРДИНАТА Y
     sa.Column('owner_name', sa.String),  # ФИО владельца
-    sa.Column('property_form', sa.Enum(FacilityPropertyForms), nullable=False),  # форма собственности
+    sa.Column('property_form', sa.Enum(FacilityPropertyForms)),  # форма собственности
     sa.Column('length', sa.Float),  # длина
     sa.Column('width', sa.Float),  # ширина
     sa.Column('area', sa.Float),  # площадь
@@ -117,11 +116,11 @@ facilities_table = sa.Table(
     sa.Column('depth', sa.Float),  # глубина
     sa.Column('converting_type', sa.Enum(FacilityCoveringTypes)),  # типи покрытия
     sa.Column('is_accessible_for_disabled', sa.Boolean),  # доступность для инвалидов
-    sa.Column('paying_type', sa.Enum(FacilityPayingTypes), nullable=False),  # платные услуги
+    sa.Column('paying_type', sa.Enum(FacilityPayingTypes)),  # платные услуги
     sa.Column('who_can_use', sa.String),  # пользователь
     sa.Column('link', sa.String),  # ссылка на сайт
     sa.Column('phone_number', sa.String),  # номер телефона
     sa.Column('open_hours', sa.String),  # режим работы
     sa.Column('eps', sa.Integer),  # ЕПС (что бы это ни было)
-    sa.Column('hidden', sa.Boolean, nullable=False),  # видимость
+    sa.Column('hidden', sa.Boolean, default=False),  # видимость
 )
