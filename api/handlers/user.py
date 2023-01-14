@@ -152,7 +152,11 @@ async def refresh_token(request: web.Request) -> web.Response:
         400: {
             "schema": ErrorResponse,
             "description": "Ошибка входных данных (незнаю, каких именно, например, если прислали неправильный токен)"
-        }
+        },
+        401: {
+            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
+                           "Authorization: Bearer 'текст токена') "
+        },
     },
 )
 @jwt_middleware
@@ -175,7 +179,11 @@ async def delete_self(request: web.Request) -> web.Response:
         400: {
             "schema": ErrorResponse,
             "description": "Ошибка входных данных"
-        }
+        },
+        401: {
+            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
+                           "Authorization: Bearer 'текст токена') "
+        },
     },
 )
 @request_schema(UpdateSelfRequest)
