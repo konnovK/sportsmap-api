@@ -4,7 +4,9 @@ from aiohttp.test_utils import ClientSession
 async def test_user_create(cli: ClientSession):
     create_user_data = {
         'email': 'user@example.com',
-        'password': 'hackme'
+        'password': 'hackme',
+        'first_name': 'kirill',
+        'last_name': 'konnov'
     }
 
     # Успешное создание пользователя
@@ -110,13 +112,18 @@ async def test_user_update(cli: ClientSession):
     # Успешное создание пользователя
     create_user_data = {
         'email': 'user@example.com',
-        'password': 'hackme'
+        'password': 'hackme',
+        'first_name': 'kirill',
+        'last_name': 'konnov'
     }
     resp = await cli.post('/admin/users', data=create_user_data)
     assert resp.status == 201
 
     # Успешная аутентификация
-    resp = await cli.post('/admin/login', data=create_user_data)
+    resp = await cli.post('/admin/login', data={
+        'email': 'user@example.com',
+        'password': 'hackme',
+    })
     assert resp.status == 200
     resp_data = await resp.json()
     assert resp_data.get('access_token')
@@ -151,6 +158,8 @@ async def test_user_update(cli: ClientSession):
     resp = await cli.put(
         '/admin/users',
         data={
+            'first_name': 'ivanov',
+            'last_name': 'ivan',
             'password': 'qwerty'
         },
         headers=headers

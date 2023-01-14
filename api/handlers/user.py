@@ -159,9 +159,6 @@ async def refresh_token(request: web.Request) -> web.Response:
 async def delete_self(request: web.Request) -> web.Response:
     user_email = request.app['email']
     async with request.app['db'].begin() as conn:
-        user = await User.get_by_email(conn, user_email)
-        if not user:
-            raise web.HTTPException(text='user with this email not found')
         await User.delete_by_email(conn, user_email)
     return web.json_response(status=204)
 

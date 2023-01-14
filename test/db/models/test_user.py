@@ -160,6 +160,7 @@ class TestUser:
                 conn,
                 email=test_user['email'],
                 password=new_password,
+                first_name='IVAN',
                 last_name='IVANOV'
             )
             assert await User.get_by_email_and_password(conn, test_user['email'], new_password) is not None
