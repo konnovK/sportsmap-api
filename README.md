@@ -34,6 +34,8 @@
 
 - `make` Отобразить список доступных команд
 - `make devenv` Создать и настроить виртуальное окружение для разработки
+- `make postgres` Создать docker контейнеры с базами данных для тестов и разработки
+- `make migrate` Применить миграции на базы данных для тестов и разработки
 - `make lint` Запустить линтер [pylama](https://pypi.org/project/pylama/)
 - `make test` Запустить тесты [pytest](https://pypi.org/project/pytest/)
 - `make run` Запустить API локально
