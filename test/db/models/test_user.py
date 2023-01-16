@@ -36,17 +36,25 @@ async def test_user_get(connection):
     assert not await user_mapper.get_by_email_and_password('INVALID', 'INVALID')
 
     # Создание обычного пользователя
-    user1 = User.new(email='user1@example.com', password='hackme', first_name='k', last_name='konnov')
+    user1 = User.new(email='user1@example.com', password='hackme')
     inserted_user_id = await user_mapper.save(user1)
     assert inserted_user_id is not None
 
     # Созданный пользователь должен быть в базе, его можно получить по мэйлу
     selected_user = await user_mapper.get_by_email('user1@example.com')
     assert selected_user.id == inserted_user_id
+    assert hasattr(selected_user, 'email')
+    assert hasattr(selected_user, 'password_hash')
+    assert hasattr(selected_user, 'first_name')
+    assert hasattr(selected_user, 'last_name')
 
     # Созданный пользователь должен быть в базе, его можно получить по мэйлу и паролю
     selected_user = await user_mapper.get_by_email_and_password('user1@example.com', 'hackme')
     assert selected_user.id == inserted_user_id
+    assert hasattr(selected_user, 'email')
+    assert hasattr(selected_user, 'password_hash')
+    assert hasattr(selected_user, 'first_name')
+    assert hasattr(selected_user, 'last_name')
 
     # Неправильный пароль не должен давать пользователя
     selected_user = await user_mapper.get_by_email_and_password('user1@example.com', 'INVALID')

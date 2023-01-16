@@ -112,5 +112,8 @@ class UserMapper(Mapper):
         return None
 
     async def delete(self, user: User) -> None:
+        """
+        Удаляет пользователя из БД
+        """
         stmt = sa.delete(users_table).where(users_table.c.email == user.email)
         await self._execute(stmt)

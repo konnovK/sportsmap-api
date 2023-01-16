@@ -48,55 +48,55 @@ class Facility(Record):
     def dict(self) -> dict[str, Any]:
         result = {}
 
-        if self.id:
+        if self.id is not None:
             result['id'] = self.id
-        if self.name:
+        if self.name is not None:
             result['name'] = self.name
-        if self.x:
+        if self.x is not None:
             result['x'] = self.x
-        if self.y:
+        if self.y is not None:
             result['y'] = self.y
-        if self.type:
+        if self.type is not None:
             result['type'] = self.type
-        if self.owner_name:
+        if self.owner_name is not None:
             result['owner_name'] = self.owner_name
-        if self.property_form:
+        if self.property_form is not None:
             result['property_form'] = self.property_form
-        if self.length:
+        if self.length is not None:
             result['length'] = self.length
-        if self.width:
+        if self.width is not None:
             result['width'] = self.width
-        if self.area:
+        if self.area is not None:
             result['area'] = self.area
-        if self.actual_workload:
+        if self.actual_workload is not None:
             result['actual_workload'] = self.actual_workload
-        if self.annual_capacity:
+        if self.annual_capacity is not None:
             result['annual_capacity'] = self.annual_capacity
-        if self.notes:
+        if self.notes is not None:
             result['notes'] = self.notes
-        if self.height:
+        if self.height is not None:
             result['height'] = self.height
-        if self.size:
+        if self.size is not None:
             result['size'] = self.size
-        if self.depth:
+        if self.depth is not None:
             result['depth'] = self.depth
-        if self.converting_type:
+        if self.converting_type is not None:
             result['converting_type'] = self.converting_type
-        if self.is_accessible_for_disabled:
+        if self.is_accessible_for_disabled is not None:
             result['is_accessible_for_disabled'] = self.is_accessible_for_disabled
-        if self.paying_type:
+        if self.paying_type is not None:
             result['paying_type'] = self.paying_type
-        if self.who_can_use:
+        if self.who_can_use is not None:
             result['who_can_use'] = self.who_can_use
-        if self.link:
+        if self.link is not None:
             result['link'] = self.link
-        if self.phone_number:
+        if self.phone_number is not None:
             result['phone_number'] = self.phone_number
-        if self.open_hours:
+        if self.open_hours is not None:
             result['open_hours'] = self.open_hours
-        if self.eps:
+        if self.eps is not None:
             result['eps'] = self.eps
-        if self.hidden:
+        if self.hidden is not None:
             result['hidden'] = self.hidden
 
         return result
@@ -159,5 +159,15 @@ class FacilityMapper(Mapper):
             return None
 
     async def delete(self, facility: Facility) -> None:
+        """
+        Удаляет пользователя из БД
+        """
         stmt = sa.delete(facilities_table).where(facilities_table.c.id == facility.id)
         await self._execute(stmt)
+
+    async def get_by_id(self, id: str) -> Facility | None:
+        stmt = sa.select(facilities_table).where(facilities_table.c.id == id)
+        facility = await self._execute_then_first(stmt)
+        if facility is None:
+            return None
+        return Facility.from_dict(facility._mapping)
