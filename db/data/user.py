@@ -8,12 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 import sqlalchemy as sa
 
 from db.data.mapper import Mapper
+from db.data.record import Record
 from db.schema import users_table
 from db.utils import hash_password
 
 
 @dataclass
-class User:
+class User(Record):
     """
     Класс сущности БД user
     """

@@ -1,21 +1,20 @@
-import pytest
-
-from db.models.facility import Facility
+from db.data.facility import Facility, FacilityMapper
 
 
-class TestUser:
-    @pytest.mark.asyncio
-    async def test_facility_create(self, setup_db):
-        engine = setup_db
+async def test_facility_create(connection):
+    conn = connection
+    facility_mapper = FacilityMapper(conn)
 
-        created_facility = {
-            'name': 'obj1',
-            'x': 123,
-            'y': 456,
-            'type': 'Gym',
-        }
+    # Создание обычного объекта
+    facility = Facility.new(**{
+        'name': 'obj1',
+        'x': 123,
+        'y': 456,
+        'type': 'Gym',
+    })
+    inserted_facility_id = await facility_mapper.save(facility)
+    assert inserted_facility_id is not None
 
-        async with engine.begin() as conn:
-            assert not await Facility.exists(conn, created_facility['name'])
-            await Facility.create(conn, created_facility)
-            assert await Facility.exists(conn, created_facility['name'])
+    # Создание объекта, который уже должен существовать
+    updated_facility_id = await facility_mapper.save(facility)
+    assert updated_facility_id is None
