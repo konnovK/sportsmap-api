@@ -171,3 +171,8 @@ class FacilityMapper(Mapper):
         if facility is None:
             return None
         return Facility.from_dict(facility._mapping)
+
+    async def get_all(self) -> list[Facility]:
+        stmt = sa.select(facilities_table)
+        facilities = await self._execute_then_all(stmt)
+        return [f._mapping if f is not None else None for f in facilities]
