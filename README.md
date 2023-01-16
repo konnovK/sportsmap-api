@@ -40,13 +40,36 @@
 - `make test` Запустить тесты [pytest](https://pypi.org/project/pytest/)
 - `make run` Запустить API локально
 
-### Также может пригодиться
+### Как подготовить окружение к разработке
 
-Для полной очистки базы данных ~~пожалуйста не запускайте~~ используется скрипт `init_db.py`: 
 ```commandline
-echo 'я прогаю уже 40 часов без еды и воды помогите'
-python -m venv venv
-./venv/bin/activate
-pip install -r requirements.txt
-python init_db.py
+make devenv
+make postgres
+make migrate
 ```
+
+В результате в текущей директории создастся виртуальное окружение python, 
+в docker поднимется база данных postgres для тестов и для разработки,
+и к этим базам применятся миграции
+
+### Как запустить тесты
+
+```commandline
+make devenv
+make postgres
+make migrate
+make test
+```
+
+В результате сработает линтер и прогонятся тесты
+
+### Как запустить API
+
+```commandline
+make devenv
+make postgres
+make migrate
+make run
+```
+
+В результате запустится API ~~(да ладно!!!)~~
