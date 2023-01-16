@@ -79,7 +79,7 @@ make_migration:
  		--db-password $(API_DEV_DB_PASSWORD) \
  		--db-host $(API_DEV_DB_HOST) \
  		--db-port $(API_DEV_DB_PORT) \
- 		--db-name $(API_DEV_DB_NAME) revision --message="one more migration" --autogenerate
+ 		--db-name $(API_DEV_DB_NAME) revision --message="some migration" --autogenerate
 
 lint:
 	$(PYTHON_BIN)/pylama

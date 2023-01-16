@@ -1,176 +1,93 @@
-import pytest
-
-from db.models.user import User, UserAlreadyExistsException
+from db.data.user import User, UserMapper
 
 
-class TestUser:
-    @pytest.mark.asyncio
-    async def test_user_create(self, setup_db):
-        engine = setup_db
+async def test_user_create(connection):
+    conn = connection
+    user_mapper = UserMapper(conn)
 
-        # В пустой бд не должно быть пользователя INVALID_EMAIL
-        async with engine.begin() as conn:
-            assert not await User.exists(conn, 'INVALID_EMAIL')
+    # Создание обычного пользователя
+    user1 = User.new(email='user1@example.com', password='hackme', first_name='k', last_name='konnov')
+    print(str(user1))
+    print(repr(user1))
+    inserted_user_id = await user_mapper.save(user1)
+    assert inserted_user_id is not None
 
-        # Создание обычного пользователя
-        test_user1 = {
-            'email': 'konnovk1@ya.ru',
-            'password': 'qwerty',
-            'first_name': 'konnovk1',
-            'last_name': 'kon',
-        }
-        async with engine.begin() as conn:
-            await User.create_user(
-                conn,
-                **test_user1
-            )
+    # Создание пользователя без first_name, last_name
+    user2 = User.new(email='user2@example.com', password='hackme')
+    inserted_user_id = await user_mapper.save(user2)
+    assert inserted_user_id is not None
 
-            assert await User.exists(conn, test_user1['email'])
+    # Создание пользователя, который уже должен существовать
+    updated_user_id = await user_mapper.save(user2)
+    assert updated_user_id is None
 
-        # Создание пользователя без first_name, last_name
-        test_user2 = {
-            'email': 'konnovk2@ya.ru',
-            'password': 'qwerty',
-        }
-        async with engine.begin() as conn:
-            await User.create_user(
-                conn,
-                **test_user2
-            )
-            assert await User.exists(conn, test_user2['email'])
+    # Создание пользователя с паролем-числом
+    user2 = User.new(email='user3@example.com', password=12345)
+    inserted_user_id = await user_mapper.save(user2)
+    assert inserted_user_id is not None
 
-        # Создание пользователя, который уже должен существовать
-        async with engine.begin() as conn:
-            with pytest.raises(UserAlreadyExistsException):
-                await User.create_user(
-                    conn,
-                    **test_user2
-                )
 
-        # Создание пользователя с паролем-числом
-        test_user3 = {
-            'email': 'konnovk3@ya.ru',
-            'password': 12345,
-        }
-        async with engine.begin() as conn:
-            await User.create_user(
-                conn,
-                **test_user3
-            )
-            assert await User.exists(conn, test_user3['email'])
+async def test_user_get(connection):
+    conn = connection
+    user_mapper = UserMapper(conn)
 
-    @pytest.mark.asyncio
-    async def test_user_get(self, setup_db):
-        engine = setup_db
+    # В пустой бд не должно быть пользователя INVALID_EMAIL
+    assert not await user_mapper.get_by_email('INVALID')
+    assert not await user_mapper.get_by_email_and_password('INVALID', 'INVALID')
 
-        async with engine.begin() as conn:
-            # Не созданный пользователь не должен быть в базе
-            assert await User.get_by_email(conn, 'INVALID') is None
+    # Создание обычного пользователя
+    user1 = User.new(email='user1@example.com', password='hackme', first_name='k', last_name='konnov')
+    inserted_user_id = await user_mapper.save(user1)
+    assert inserted_user_id is not None
 
-            # Не созданный пользователь не должен быть в базе
-            assert (await User.get_by_email_and_password(conn, 'INVALID', 'INVALID')) is None
+    # Созданный пользователь должен быть в базе, его можно получить по мэйлу
+    selected_user = await user_mapper.get_by_email('user1@example.com')
+    assert selected_user.id == inserted_user_id
 
-        test_user1 = {
-            'email': 'konnovk1@ya.ru',
-            'password': 'qwerty',
-        }
+    # Созданный пользователь должен быть в базе, его можно получить по мэйлу и паролю
+    selected_user = await user_mapper.get_by_email_and_password('user1@example.com', 'hackme')
+    assert selected_user.id == inserted_user_id
 
-        async with engine.begin() as conn:
-            created_user_id = await User.create_user(
-                conn,
-                **test_user1
-            )
-            # Созданный пользователь должен быть в базе, его можно получить по мэйлу
-            assert (await User.get_by_email(conn, test_user1['email'])).id == created_user_id
-            # Созданный пользователь должен быть в базе, его можно получить по мэйлу и паролю
-            assert (
-                (await User.get_by_email_and_password(conn, test_user1['email'], test_user1['password'])).id
-                == created_user_id
-            )
-            # Неправильный пароль не должен давать пользователя
-            assert await User.get_by_email_and_password(conn, test_user1['email'], 'INVALID') is None
+    # Неправильный пароль не должен давать пользователя
+    selected_user = await user_mapper.get_by_email_and_password('user1@example.com', 'INVALID')
+    assert selected_user is None
 
-    @pytest.mark.asyncio
-    async def test_user_delete(self, setup_db):
-        engine = setup_db
-        test_user = {
-            'email': 'konnovk1@ya.ru',
-            'password': 'qwerty',
-            'first_name': 'konnovk1',
-            'last_name': 'kon',
-        }
-        async with engine.begin() as conn:
-            await User.create_user(
-                conn,
-                **test_user
-            )
 
-            assert await User.exists(conn, test_user['email'])
-            await User.delete_by_email(conn, test_user['email'])
-            assert not await User.exists(conn, test_user['email'])
+async def test_user_delete(connection):
+    conn = connection
+    user_mapper = UserMapper(conn)
 
-        async with engine.begin() as conn:
-            await User.delete_by_email(conn, 'INVALID_EMAIL')
+    # Создание обычного пользователя
+    user1 = User.new(email='user1@example.com', password='hackme', first_name='k', last_name='konnov')
+    inserted_user_id = await user_mapper.save(user1)
+    assert inserted_user_id is not None
 
-    @pytest.mark.asyncio
-    async def test_user_set_admin(self, setup_db):
-        engine = setup_db
-        test_user = {
-            'email': 'konnovk1@ya.ru',
-            'password': 'qwerty',
-            'first_name': 'konnovk1',
-            'last_name': 'kon',
-        }
-        async with engine.begin() as conn:
-            await User.create_user(
-                conn,
-                **test_user
-            )
-            # Сначала пользователь не имеет групп
-            assert not await User.check_is_admin(conn, test_user['email'])
+    # удаление пользователя, которого нет в бд
+    user2 = User.new(email='user2@example.com', password='hackme')
+    assert await user_mapper.get_by_email('user2@example.com') is None
+    await user_mapper.delete(user2)
 
-            # Сделаем его админом
-            await User.set_admin(conn, test_user['email'])
-            assert await User.check_is_admin(conn, test_user['email'])
+    # успешное удаление пользователя
+    await user_mapper.delete(user1)
 
-            # Уберем ему группу
-            await User.set_none_group(conn, test_user['email'])
-            assert not await User.check_is_admin(conn, test_user['email'])
+    # удаленного пользователя нет в бд
+    assert await user_mapper.get_by_email('user1@example.com') is None
 
-    @pytest.mark.asyncio
-    async def test_user_update(self, setup_db):
-        engine = setup_db
-        old_password = 'qwerty'
-        new_password = 'hackme'
-        test_user = {
-            'email': 'konnovk1@ya.ru',
-            'password': old_password,
-            'first_name': 'konnovk1',
-            'last_name': 'kon',
-        }
-        async with engine.begin() as conn:
-            await User.create_user(
-                conn,
-                **test_user
-            )
-            assert await User.get_by_email_and_password(conn, test_user['email'], old_password) is not None
 
-        async with engine.begin() as conn:
-            await User.update_user(
-                conn,
-                email=test_user['email'],
-                password=new_password,
-                first_name='IVAN',
-                last_name='IVANOV'
-            )
-            assert await User.get_by_email_and_password(conn, test_user['email'], new_password) is not None
-            assert await User.get_by_email_and_password(conn, test_user['email'], old_password) is None
-            assert (await User.get_by_email(conn, test_user['email'])).last_name == 'IVANOV'
+async def test_user_update(connection):
+    conn = connection
+    user_mapper = UserMapper(conn)
 
-        async with engine.begin() as conn:
-            invalid_updated_user = await User.update_user(
-                conn,
-                email='INVALID',
-                last_name='IVANOV'
-            )
-            assert invalid_updated_user is None
+    # Создание обычного пользователя
+    user1 = User.new(email='user1@example.com', password='hackme', first_name='k', last_name='konnov')
+    inserted_user_id = await user_mapper.save(user1)
+    assert inserted_user_id is not None
+
+    # обновим поля first_name, last_name
+    user1.first_name = 'ilnar'
+    user1.last_name = 'mirhaev'
+    updated_user_id = await user_mapper.save(user1)
+    assert updated_user_id is None
+    user = await user_mapper.get_by_email('user1@example.com')
+    assert user.first_name == 'ilnar'
+    assert user.last_name == 'mirhaev'

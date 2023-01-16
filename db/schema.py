@@ -19,10 +19,6 @@ convention = {
 metadata = sa.MetaData(naming_convention=convention)
 
 
-class UserGroups(enum.Enum):
-    Admin = 'Admin'
-
-
 """
 Таблица пользователей
 """
@@ -34,7 +30,6 @@ users_table = sa.Table(
     sa.Column('last_name', sa.String),
     sa.Column('email', sa.String, nullable=False, unique=True),
     sa.Column('password_hash', sa.String, nullable=False),
-    sa.Column('group', sa.Enum(UserGroups)),
 )
 
 """
