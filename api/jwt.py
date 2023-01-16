@@ -6,7 +6,7 @@ import jwt
 from jwt import PyJWTError
 from loguru import logger
 
-from db.models.user import User
+from db.data.user import UserMapper
 
 
 class JWTException(Exception):
@@ -115,7 +115,8 @@ class JWT:
 def jwt_middleware(handler):
     """
     Собственный промежуточный обработчик (декоратор) для проверки jwt токена.
-    :param handler: обработчик запроса
+
+    После проверки токена в request.app['user'] будет находиться объект аутентифицированного пользователя
     """
     async def wrapper(request: web.Request):
         logger.debug('JWT Check')
@@ -141,10 +142,13 @@ def jwt_middleware(handler):
             raise web.HTTPUnauthorized()
 
         async with request.app['db'].begin() as conn:
-            if not await User.exists(conn, user_email):
+            user_mapper = UserMapper(conn)
+
+            user = await user_mapper.get_by_email(user_email)
+            if user is None:
                 raise web.HTTPUnauthorized()
 
-        request.app['email'] = user_email
+        request.app['user'] = user
         logger.debug(f'JWT Ok, email = {user_email}')
         response = await handler(request)
         return response

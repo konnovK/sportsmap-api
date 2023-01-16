@@ -8,7 +8,7 @@ from api.jwt import jwt_middleware, JWTException
 from api.schemas.error import ErrorResponse
 from api.schemas.user import UserResponse, CreateUserRequest, LoginRequest, LoginResponse, RefreshTokenRequest, \
     UpdateSelfRequest
-from db.models.user import User
+from db.data.user import User, UserMapper
 
 
 @docs(
@@ -32,22 +32,16 @@ from db.models.user import User
 @request_schema(CreateUserRequest)
 async def register(request: web.Request) -> web.Response:
     data = CreateUserRequest().load(await request.json())
-    user_first_name = data.get('first_name')
-    user_last_name = data.get('last_name')
-    user_email = data.get('email')
-    user_password = data.get('password')
+    user = User.new(**data)
 
     async with request.app['db'].begin() as conn:
-        if await User.exists(conn, user_email):
-            return web.json_response(status=409)
-        user_id = await User.create_user(conn, user_email, user_password, user_first_name, user_last_name)
+        user_mapper = UserMapper(conn)
 
-    return web.json_response(UserResponse().dump({
-        "id": user_id,
-        "first_name": user_first_name,
-        "last_name": user_last_name,
-        "email": user_email
-    }), status=201)
+        if await user_mapper.get_by_email(user.email):
+            return web.json_response(status=409)
+        await user_mapper.save(user)
+
+    return web.json_response(UserResponse().dump(user), status=201)
 
 
 @docs(
@@ -72,22 +66,20 @@ async def login(request: web.Request) -> web.Response:
     user_password = data.get('password')
 
     async with request.app['db'].begin() as conn:
-        user = await User.get_by_email_and_password(conn, user_email, user_password)
-        if not user:
+        user_mapper = UserMapper(conn)
+
+        user = await user_mapper.get_by_email_and_password(user_email, user_password)
+        if user is None:
             raise web.HTTPBadRequest(text='wrong email or password')
 
     access_token, refresh_token, expires_in = request.app['jwt'].create_jwt(user.email)
 
-    return web.json_response(LoginResponse().dump({
-        "id": user.id,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "group": user.group,
+    return web.json_response({
         "access_token": access_token,
         "access_token_expires_in": expires_in,
         "refresh_token": refresh_token,
-    }))
+        **LoginResponse().dump(user)
+    })
 
 
 @docs(
@@ -110,6 +102,7 @@ async def refresh_token(request: web.Request) -> web.Response:
     data = RefreshTokenRequest().load(await request.json())
     access_token = data.get('access_token')
     refresh_token = data.get('refresh_token')
+
     try:
         user_email = request.app['jwt'].get_email_from_access_token(access_token)
     except JWTException:
@@ -118,27 +111,26 @@ async def refresh_token(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(text='wrong access token')
 
     async with request.app['db'].begin() as conn:
-        user = await User.get_by_email(conn, user_email)
-        if not user:
+        user_mapper = UserMapper(conn)
+
+        user = await user_mapper.get_by_email(user_email)
+        if user is None:
             raise web.HTTPBadRequest(text='wrong access token')
 
     try:
         access_token, refresh_token, expires_in = request.app['jwt'].refresh_jwt(access_token, refresh_token)
     except JWTException:
         raise web.HTTPBadRequest(text='wrong refresh token')
+
     if access_token is None:
         raise web.HTTPBadRequest(text='wrong refresh token')
 
-    return web.json_response(LoginResponse().dump({
-        "id": user.id,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "group": user.group,
+    return web.json_response({
         "access_token": access_token,
         "access_token_expires_in": expires_in,
         "refresh_token": refresh_token,
-    }))
+        **LoginResponse().dump(user)
+    })
 
 
 @docs(
@@ -161,9 +153,13 @@ async def refresh_token(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def delete_self(request: web.Request) -> web.Response:
-    user_email = request.app['email']
+    user = request.app['user']
+
     async with request.app['db'].begin() as conn:
-        await User.delete_by_email(conn, user_email)
+        user_mapper = UserMapper(conn)
+
+        await user_mapper.delete(user)
+
     return web.json_response(status=204)
 
 
@@ -189,23 +185,20 @@ async def delete_self(request: web.Request) -> web.Response:
 @request_schema(UpdateSelfRequest)
 @jwt_middleware
 async def update_self(request: web.Request) -> web.Response:
-    user_email = request.app['email']
+    user = request.app['user']
+
     data = UpdateSelfRequest().load(await request.json())
 
-    update_data = {}
     if data.get('first_name'):
-        update_data['first_name'] = data.get('first_name')
+        user.first_name = data.get('first_name')
     if data.get('last_name'):
-        update_data['last_name'] = data.get('last_name')
+        user.last_name = data.get('last_name')
     if data.get('password'):
-        update_data['password'] = data.get('password')
+        user.set_password(data.get('password'))
 
     async with request.app['db'].begin() as conn:
-        user = await User.update_user(conn, user_email, **update_data)
-    return web.json_response(UserResponse().dump({
-        "id": user.id,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "group": user.group
-    }))
+        user_mapper = UserMapper(conn)
+
+        user = await user_mapper.save(user)
+
+    return web.json_response(UserResponse().dump(user))

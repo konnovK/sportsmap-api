@@ -25,6 +25,13 @@ async def setup_db(loop):
         await conn.run_sync(metadata.drop_all)
 
 
+@pytest.fixture()
+async def connection(loop, setup_db):
+    engine = setup_db
+    async with engine.begin() as conn:
+        yield conn
+
+
 @pytest.fixture
 def cli(loop, aiohttp_client, setup_db):
     config = get_config()
