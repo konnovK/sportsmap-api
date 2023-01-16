@@ -108,6 +108,41 @@ async def test_user_refresh(cli: ClientSession):
     assert resp_data.get('access_token_expires_in')
 
 
+async def test_user_delete(cli: ClientSession):
+    # Успешное создание пользователя
+    create_user_data = {
+        'email': 'user@example.com',
+        'password': 'hackme'
+    }
+    resp = await cli.post('/admin/users', data=create_user_data)
+    assert resp.status == 201
+
+    # Успешная аутентификация
+    resp = await cli.post('/admin/login', data=create_user_data)
+    assert resp.status == 200
+    resp_data = await resp.json()
+    assert resp_data.get('access_token')
+    assert resp_data.get('refresh_token')
+
+    access_token = resp_data.get('access_token')
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    # Неудальное удаление пользователя (без аутентификации)
+    resp = await cli.delete('/admin/users')
+    assert resp.status == 401
+
+    # Успешное удаление пользователя
+    resp = await cli.delete('/admin/users', headers=headers)
+    assert resp.status == 204
+
+    # проверим, что пользователь действительно удалился
+    resp = await cli.post('/admin/login', data=create_user_data)
+    assert resp.status == 400
+    assert (await resp.json())['message'] == 'wrong email or password'
+
+
 async def test_user_update(cli: ClientSession):
     # Успешное создание пользователя
     create_user_data = {
@@ -177,38 +212,3 @@ async def test_user_update(cli: ClientSession):
     resp_data = await resp.json()
     assert resp_data.get('access_token')
     assert resp_data.get('refresh_token')
-
-
-async def test_user_delete(cli: ClientSession):
-    # Успешное создание пользователя
-    create_user_data = {
-        'email': 'user@example.com',
-        'password': 'hackme'
-    }
-    resp = await cli.post('/admin/users', data=create_user_data)
-    assert resp.status == 201
-
-    # Успешная аутентификация
-    resp = await cli.post('/admin/login', data=create_user_data)
-    assert resp.status == 200
-    resp_data = await resp.json()
-    assert resp_data.get('access_token')
-    assert resp_data.get('refresh_token')
-
-    access_token = resp_data.get('access_token')
-    headers = {
-        'Authorization': f'Bearer {access_token}'
-    }
-
-    # Неудальное удаление пользователя (без аутентификации)
-    resp = await cli.delete('/admin/users')
-    assert resp.status == 401
-
-    # Успешное удаление пользователя
-    resp = await cli.delete('/admin/users', headers=headers)
-    assert resp.status == 204
-
-    # проверим, что пользователь действительно удалился
-    resp = await cli.post('/admin/login', data=create_user_data)
-    assert resp.status == 400
-    assert (await resp.json())['message'] == 'wrong email or password'
