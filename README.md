@@ -74,3 +74,26 @@ make run
 ```
 
 В результате запустится API ~~(да ладно!!!)~~
+
+## Деплой
+
+API разворачивается в виде docker контрейнера, в registry 
+от yandex.cloud.
+
+Используется .env файл, в нем определены следующие переменные:
+
+- `REGISTRY_ID` - id registry от yandex.cloud
+- `TOKEN` - токен registry от yandex.cloud
+- `VERSION` - версия контейнера
+- `API_PORT` - порт, на котором будет запущена API
+- `DB_USER` - юзер БД в проде
+- `DB_PASSWORD` - пароль юзера БД в проде
+- `DB_HOST` - хост БД в проде
+- `DB_PORT` - порт БД в проде
+- `DB_NAME` - название БД в проде
+
+### Команды
+
+- `make deploy` - создаст image,
+запушит его в registry от yandex.cloud, а также накатит
+миграции на бд **(TODO: сделать github action для этого)**

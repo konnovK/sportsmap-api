@@ -124,9 +124,8 @@ docker:
 	--network $(PROJECT_NAME) \
 	--publish $(API_PORT):$(API_PORT) $(PROJECT_NAME):$(VERSION)
 
-# Для прода
-
-include ./deploy/.env
+# ДЕПЛОЙ
+include .env
 
 migrate_prod:
 	$(PYTHON_BIN)/$(PYTHON_EXEC) -m db --db-user $(DB_USER) \
@@ -135,7 +134,7 @@ migrate_prod:
  		--db-port $(DB_PORT) \
  		--db-name $(DB_NAME) upgrade head
 
-deploy:
+deploy: migrate_prod
 	REGISTRY_ID=$(REGISTRY_ID) \
 	TOKEN=$(TOKEN) \
 	VERSION=$(VERSION) \
