@@ -123,3 +123,21 @@ docker:
 	--env API_DB_NAME=$(API_DEV_DB_NAME) \
 	--network $(PROJECT_NAME) \
 	--publish $(API_PORT):$(API_PORT) $(PROJECT_NAME):$(VERSION)
+
+# Для прода
+
+include ./deploy/.env
+
+migrate_prod:
+	$(PYTHON_BIN)/$(PYTHON_EXEC) -m db --db-user $(DB_USER) \
+ 		--db-password $(DB_PASSWORD) \
+ 		--db-host $(DB_HOST) \
+ 		--db-port $(DB_PORT) \
+ 		--db-name $(DB_NAME) upgrade head
+
+deploy:
+	REGISTRY_ID=$(REGISTRY_ID) \
+	TOKEN=$(TOKEN) \
+	VERSION=$(VERSION) \
+	API_PORT=$(API_PORT) \
+	./deploy.sh
