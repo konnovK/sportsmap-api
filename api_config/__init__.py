@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
+    API_HOST: str | None
     API_PORT: int | None
     API_DB_USER: str | None
     API_DB_PASSWORD: str | None
@@ -17,6 +18,10 @@ class Config:
 
 
 def get_config() -> Config:
+    API_HOST = os.getenv('API_PATH')
+    if not API_HOST:
+        logger.warning('API_HOST is none, use localhost by default')
+        API_HOST = '127.0.0.1'
     API_PORT = os.getenv('API_PORT')
     if not API_PORT:
         logger.warning('API_PORT is none, use 8080 by default')
@@ -60,6 +65,7 @@ def get_config() -> Config:
     API_DEBUG_MODE = bool(API_DEBUG_MODE)
 
     return Config(
+        API_HOST=API_HOST,
         API_PORT=API_PORT,
         API_DB_USER=API_DB_USER,
         API_DB_PASSWORD=API_DB_PASSWORD,
