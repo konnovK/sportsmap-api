@@ -103,8 +103,15 @@ run:
 	$(PYTHON_BIN)/$(PYTHON_EXEC) main.py
 
 build:
-	API_PORT=$(API_PORT) \
-	docker build --tag=$(PROJECT_NAME):$(VERSION) .
+	docker build \
+		--build-arg API_PORT=$(API_PORT) \
+		--build-arg API_DB_USER=$(API_DEV_DB_USER) \
+		--build-arg API_DB_PASSWORD=$(API_DEV_DB_PASSWORD) \
+		--build-arg API_DB_HOST=$(API_DEV_DB_NAME) \
+		--build-arg API_DB_PORT=$(API_DEV_DB_PORT) \
+		--build-arg API_DB_NAME=$(API_DEV_DB_NAME) \
+		--network $(PROJECT_NAME) \
+		--tag=$(PROJECT_NAME):$(VERSION) .
 
 docker:
 	docker stop $(PROJECT_NAME) || true
