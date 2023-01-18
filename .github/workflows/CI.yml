@@ -38,9 +38,11 @@ jobs:
         pip install -r api/requirements.txt
     - name: Lint
       run: |
+        cd ./api
         pylama
     - name: Test
       run: |
+        cd ./api
         API_PORT="8080" \
         API_DB_URL="postgresql+asyncpg://user123:123@localhost:5432/sportsmap_test" \
         pytest
