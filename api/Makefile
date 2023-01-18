@@ -45,5 +45,5 @@ test: lint
 	$(PYTHON_BIN)/pytest -W ignore::DeprecationWarning --cov-report term-missing --cov --durations=0
 
 run:
-	API_DB_URL=$(TEST_DB_URL) \
+	API_DB_URL=$(DEV_DB_URL) \
 	$(PYTHON_BIN)/python main.py

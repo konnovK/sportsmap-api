@@ -8,7 +8,7 @@ from api.app import create_app
 def main():
     config = Config.new()
     app = create_app(config)
-    web.run_app(app, host=config.API_HOST, port=config.API_PORT, access_log=logger)
+    web.run_app(app, host=config.API_HOST, port=config.API_PORT, access_log=logger, keepalive_timeout=5)
 
 
 if __name__ == '__main__':

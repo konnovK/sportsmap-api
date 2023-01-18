@@ -29,13 +29,15 @@ class Base:
 
 
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = 'users'
 
     id = sa.Column('id', sa.String, primary_key=True, nullable=False)
     first_name = sa.Column('first_name', sa.String)
     last_name = sa.Column('last_name', sa.String)
     email = sa.Column('email', sa.String, nullable=False, unique=True)
     password_hash = sa.Column('password_hash', sa.String, nullable=False)
+
+    ix_id = sa.Index('ix__users__id', id, postgresql_using='hash')
 
     def __init__(self, **kwargs):
         self.id = str(uuid.uuid4())
@@ -108,6 +110,11 @@ class Facility(Base):
     open_hours = sa.Column('open_hours', sa.String)  # режим работы
     eps = sa.Column('eps', sa.Integer)  # ЕПС (что бы это ни было)
     hidden = sa.Column('hidden', sa.Boolean, default=False)  # видимость
+
+    ix_id = sa.Index('ix__facilities__id', id, postgresql_using='hash')
+    ix_name = sa.Index('ix__facilities__name', name, postgresql_using='hash')
+    ix_x = sa.Index('ix__facilities__x', x, postgresql_using='btree')
+    ix_y = sa.Index('ix__facilities__y', y, postgresql_using='btree')
 
     def __init__(self, **kwargs):
         self.id = str(uuid.uuid4())
