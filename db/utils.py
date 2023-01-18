@@ -57,7 +57,7 @@ async def debug_db_init(config: Config):
     from db.schema import metadata
     async with engine.begin() as conn:
         await conn.run_sync(metadata.drop_all)
-        await conn.run_sync(metadata.create_all)
+        # await conn.run_sync(metadata.create_all)
 
 
 def hash_password(password: str) -> str:

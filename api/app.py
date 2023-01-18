@@ -19,7 +19,9 @@ def create_app(config: Config) -> web.Application:
     """
     Создает экземпляр приложения, готового к запуску.
     """
-    app = web.Application(logger=logger)
+    app = web.Application(
+        logger=logger,
+    )
 
     app.middlewares.append(error_middleware)
 
