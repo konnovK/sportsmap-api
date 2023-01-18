@@ -12,7 +12,7 @@ from api.jwt import JWT
 from api.middlewares import error_middleware
 from api_config import Config
 from api.payloads import AsyncGenJSONListPayload, JsonPayload
-from db.utils import setup_db
+from utils import setup_db
 
 
 def create_app(config: Config) -> web.Application:

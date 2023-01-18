@@ -3,12 +3,17 @@ from aiohttp_apispec import (
     docs,
     request_schema,
 )
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.jwt import jwt_middleware, JWTException
+from api.jwt import jwt_middleware, JWTException  # , JWTException
 from api.schemas.error import ErrorResponse
 from api.schemas.user import UserResponse, CreateUserRequest, LoginRequest, LoginResponse, RefreshTokenRequest, \
     UpdateSelfRequest
-from db.data.user import User, UserMapper
+from db import User
+import sqlalchemy as sa
+
+from utils import hash_password
 
 
 @docs(
@@ -32,14 +37,15 @@ from db.data.user import User, UserMapper
 @request_schema(CreateUserRequest)
 async def register(request: web.Request) -> web.Response:
     data = CreateUserRequest().load(await request.json())
-    user = User.new(**data)
+    user = User(**data)
 
-    async with request.app['db'].begin() as conn:
-        user_mapper = UserMapper(conn)
-
-        if await user_mapper.get_by_email(user.email):
+    async with request.app['session']() as session:
+        try:
+            async with session.begin():
+                session: AsyncSession
+                session.add(user)
+        except IntegrityError:
             return web.json_response(status=409)
-        await user_mapper.save(user)
 
     return web.json_response(UserResponse().dump(user), status=201)
 
@@ -65,20 +71,24 @@ async def login(request: web.Request) -> web.Response:
     user_email = data.get('email')
     user_password = data.get('password')
 
-    async with request.app['db'].begin() as conn:
-        user_mapper = UserMapper(conn)
-
-        user = await user_mapper.get_by_email_and_password(user_email, user_password)
-        if user is None:
-            raise web.HTTPBadRequest(text='wrong email or password')
-
-    access_token, refresh_token, expires_in = request.app['jwt'].create_jwt(user.email)
+    async with request.app['session']() as session:
+        async with session.begin():
+            session: AsyncSession
+            existed_user = (
+                await session.execute(
+                    sa.select(User)
+                    .where(User.email == user_email)
+                    .where(User.password_hash == hash_password(user_password))
+                )).scalars().first()
+            if existed_user is None:
+                raise web.HTTPBadRequest(text='wrong email or password')
+    access_token, refresh_token, expires_in = request.app['jwt'].create_jwt(existed_user.email)
 
     return web.json_response({
         "access_token": access_token,
         "access_token_expires_in": expires_in,
         "refresh_token": refresh_token,
-        **LoginResponse().dump(user)
+        **UserResponse().dump(existed_user)
     })
 
 
@@ -110,13 +120,17 @@ async def refresh_token(request: web.Request) -> web.Response:
     if not user_email:
         raise web.HTTPBadRequest(text='wrong access token')
 
-    async with request.app['db'].begin() as conn:
-        user_mapper = UserMapper(conn)
-
-        user = await user_mapper.get_by_email(user_email)
-        if user is None:
-            raise web.HTTPBadRequest(text='wrong access token')
-
+    async with request.app['session']() as session:
+        async with session.begin():
+            session: AsyncSession
+            user = (
+                await session.execute(
+                    sa.select(User)
+                    .where(User.email == user_email)
+                )
+            ).scalars().first()
+            if user is None:
+                raise web.HTTPBadRequest(text='wrong access token')
     try:
         access_token, refresh_token, expires_in = request.app['jwt'].refresh_jwt(access_token, refresh_token)
     except JWTException:
@@ -153,13 +167,14 @@ async def refresh_token(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def delete_self(request: web.Request) -> web.Response:
-    user = request.app['user']
-
-    async with request.app['db'].begin() as conn:
-        user_mapper = UserMapper(conn)
-
-        await user_mapper.delete(user)
-
+    user_email = request.app['email']
+    async with request.app['session']() as session:
+        async with session.begin():
+            session: AsyncSession
+            user = (
+                await session.execute(sa.select(User).where(User.email == user_email))
+            ).scalars().first()
+            await session.delete(user)
     return web.json_response(status=204)
 
 
@@ -185,20 +200,22 @@ async def delete_self(request: web.Request) -> web.Response:
 @request_schema(UpdateSelfRequest)
 @jwt_middleware
 async def update_self(request: web.Request) -> web.Response:
-    user = request.app['user']
-
+    user_email = request.app['email']
     data = UpdateSelfRequest().load(await request.json())
 
-    if data.get('first_name'):
-        user.first_name = data.get('first_name')
-    if data.get('last_name'):
-        user.last_name = data.get('last_name')
-    if data.get('password'):
-        user.set_password(data.get('password'))
-
-    async with request.app['db'].begin() as conn:
-        user_mapper = UserMapper(conn)
-
-        user = await user_mapper.save(user)
+    async with request.app['session']() as session:
+        async with session.begin():
+            session: AsyncSession
+            user = (
+                await session.execute(sa.select(User).where(User.email == user_email))
+            ).scalars().first()
+            if user is None:
+                return web.HTTPBadRequest(text='unknown user email')
+            if data.get('first_name'):
+                user.first_name = data.get('first_name')
+            if data.get('last_name'):
+                user.last_name = data.get('last_name')
+            if data.get('password'):
+                user.password_hash = hash_password(data.get('password'))
 
     return web.json_response(UserResponse().dump(user))

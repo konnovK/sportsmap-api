@@ -54,7 +54,10 @@ async def test_user_login(cli: ClientSession):
     assert (await resp.json()).get('message') == 'wrong email or password'
 
     # Успешная аутентификация
-    resp = await cli.post('/admin/login', data=create_user_data)
+    resp = await cli.post('/admin/login', data={
+        'email': 'user@example.com',
+        'password': 'hackme'
+    })
     assert resp.status == 200
     resp_data = await resp.json()
     assert resp_data.get('access_token')

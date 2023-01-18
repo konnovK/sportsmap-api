@@ -6,9 +6,6 @@ import jwt
 from jwt import PyJWTError
 from loguru import logger
 
-from db.data.user import UserMapper
-
-
 class JWTException(Exception):
     """
     Исключение, которое выбрасивают методы, работающие с jwt.
@@ -141,15 +138,7 @@ def jwt_middleware(handler):
         except JWTException:
             raise web.HTTPUnauthorized()
 
-        async with request.app['db'].begin() as conn:
-            user_mapper = UserMapper(conn)
-
-            user = await user_mapper.get_by_email(user_email)
-            if user is None:
-                raise web.HTTPUnauthorized()
-
-        request.app['user'] = user
-        logger.debug(f'JWT Ok, email = {user_email}')
+        request.app['email'] = user_email
         response = await handler(request)
         return response
     return wrapper
