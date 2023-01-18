@@ -20,7 +20,7 @@ jobs:
           REGISTRY_ID: ${{ secrets.REGISTRY_ID }}
           IMAGE_NAME: sportsmap-backend-new
 
-      - name: deploy-docker-frontend
+      - name: deploy-docker-backend
         run: sh ./scripts/deploy.sh
         env:
           OAUTH: ${{ secrets.OAUTH }}
