@@ -3,40 +3,14 @@ name: deploy
 on:
   push:
     branches: [ "main" ]
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: docker://postgres
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_USER: user123
-          POSTGRES_PASSWORD: 123
-          POSTGRES_DB: sportsmap_test
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.11"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r api/requirements.txt
-    - name: Lint
-      run: |
-        cd ./api
-        pylama
-    - name: Test
-      run: |
-        cd ./api
-        API_PORT="8080" \
-        API_DB_URL="postgresql+asyncpg://user123:123@localhost:5432/sportsmap_test" \
-        pytest
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
