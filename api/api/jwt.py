@@ -6,6 +6,7 @@ import jwt
 from jwt import PyJWTError
 from loguru import logger
 
+
 class JWTException(Exception):
     """
     Исключение, которое выбрасивают методы, работающие с jwt.

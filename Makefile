@@ -82,7 +82,7 @@ make_migration:
  		--db-name $(API_DEV_DB_NAME) revision --message="some migration" --autogenerate
 
 lint:
-	$(PYTHON_BIN)/pylama
+	$(PYTHON_BIN)/pylama ./api
 
 test: lint
 	API_PORT=$(API_PORT) \
@@ -91,7 +91,7 @@ test: lint
 	API_DB_HOST=$(API_TEST_DB_HOST) \
 	API_DB_PORT=$(API_TEST_DB_PORT) \
 	API_DB_NAME=$(API_TEST_DB_NAME) \
-	$(PYTHON_BIN)/pytest -W ignore::DeprecationWarning --cov-report term-missing --cov --durations=0
+	$(PYTHON_BIN)/pytest -W ignore::DeprecationWarning --cov-report term-missing --cov --durations=0 ./api
 
 run:
 	API_PORT=$(API_PORT) \
@@ -100,7 +100,7 @@ run:
 	API_DB_HOST=$(API_DEV_DB_HOST) \
 	API_DB_PORT=$(API_DEV_DB_PORT) \
 	API_DB_NAME=$(API_DEV_DB_NAME) \
-	$(PYTHON_BIN)/$(PYTHON_EXEC) main.py
+	$(PYTHON_BIN)/$(PYTHON_EXEC) ./api/main.py
 
 build:
 	docker build \
