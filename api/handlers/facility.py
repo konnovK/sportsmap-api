@@ -6,7 +6,7 @@ from aiohttp_apispec import (
 
 from api.jwt import jwt_middleware
 from api.schemas.error import ErrorResponse
-from api.schemas.facility import FacilityRequest, FacilityResponse
+from api.schemas.facility import FacilityRequest, FacilityResponse, FacilityResponseList
 from db.data.facility import Facility, FacilityMapper
 
 
@@ -120,3 +120,66 @@ async def delete_facility(request: web.Request) -> web.Response:
         await facility_mapper.delete(facility)
 
     return web.json_response(status=204)
+
+
+@docs(
+    tags=["Facilities"],
+    summary="Получение спортивного объекта по id",
+    description="Получение спортивного объекта по id",
+    responses={
+        200: {
+            "schema": FacilityResponse,
+            "description": "Полученный объект"
+        },
+        400: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
+        },
+        401: {
+            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
+                           "Authorization: Bearer 'текст токена') "
+        },
+    },
+)
+@jwt_middleware
+async def get_facility_by_id(request: web.Request) -> web.Response:
+    async with request.app['db'].begin() as conn:
+        facility_mapper = FacilityMapper(conn)
+
+        facility = await facility_mapper.get_by_id(request.match_info['id'])
+        if facility is None:
+            return web.HTTPBadRequest(text="facility with this id doesn't exists")
+
+    return web.json_response(FacilityResponse().dump(facility), status=200)
+
+
+@docs(
+    tags=["Facilities"],
+    summary="Получение всех спортивных объектов",
+    description="Получение всех спортивных объектов",
+    responses={
+        200: {
+            "schema": FacilityResponseList,
+            "description": "Полученные объекты"
+        },
+        400: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
+        },
+        401: {
+            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
+                           "Authorization: Bearer 'текст токена') "
+        },
+    },
+)
+@jwt_middleware
+async def get_all_facilities(request: web.Request) -> web.Response:
+    async with request.app['db'].begin() as conn:
+        facility_mapper = FacilityMapper(conn)
+
+        facilities = await facility_mapper.get_all()
+
+    return web.json_response(FacilityResponseList().dump({
+        'count': len(facilities),
+        'data': [FacilityResponse().dump(facility) for facility in facilities]
+    }), status=200)

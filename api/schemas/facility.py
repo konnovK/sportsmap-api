@@ -54,3 +54,8 @@ class FacilityResponse(Schema):
     open_hours = fields.Str()  # режим работы
     eps = fields.Int()  # ЕПС (что бы это ни было)
     hidden = fields.Bool()  # видимость
+
+
+class FacilityResponseList(Schema):
+    count = fields.Int(required=True, nullable=False)
+    data = fields.List(fields.Nested(FacilityResponse()), required=True, nullable=False)

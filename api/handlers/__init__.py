@@ -1,4 +1,4 @@
-from .facility import create_facility, update_facility, delete_facility
+from .facility import create_facility, update_facility, delete_facility, get_facility_by_id, get_all_facilities
 from .ping import ping_handler, auth_ping_handler
 from .user import (
     register,
@@ -32,4 +32,6 @@ ROUTES = [
     web.post('/facility', create_facility),
     web.put('/facility/{id}', update_facility),
     web.delete('/facility/{id}', delete_facility),
+    web.get('/facility/{id}', get_facility_by_id),
+    web.get('/facility', get_all_facilities),
 ]
