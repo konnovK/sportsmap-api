@@ -91,7 +91,7 @@ test: lint
 	API_DB_HOST=$(API_TEST_DB_HOST) \
 	API_DB_PORT=$(API_TEST_DB_PORT) \
 	API_DB_NAME=$(API_TEST_DB_NAME) \
-	$(PYTHON_BIN)/pytest -W ignore::DeprecationWarning --cov-report term-missing --cov
+	$(PYTHON_BIN)/pytest -W ignore::DeprecationWarning --cov-report term-missing --cov --durations=0
 
 run:
 	API_PORT=$(API_PORT) \

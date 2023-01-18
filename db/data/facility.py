@@ -98,7 +98,6 @@ class Facility(Record):
             result['eps'] = self.eps
         if self.hidden is not None:
             result['hidden'] = self.hidden
-
         return result
 
     @staticmethod
@@ -167,6 +166,13 @@ class FacilityMapper(Mapper):
 
     async def get_by_id(self, id: str) -> Facility | None:
         stmt = sa.select(facilities_table).where(facilities_table.c.id == id)
+        facility = await self._execute_then_first(stmt)
+        if facility is None:
+            return None
+        return Facility.from_dict(facility._mapping)
+
+    async def get_by_name(self, name: str) -> Facility | None:
+        stmt = sa.select(facilities_table).where(facilities_table.c.name == name)
         facility = await self._execute_then_first(stmt)
         if facility is None:
             return None

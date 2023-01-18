@@ -1,3 +1,4 @@
+from .facility import create_facility, update_facility, delete_facility
 from .ping import ping_handler, auth_ping_handler
 from .user import (
     register,
@@ -26,4 +27,9 @@ ROUTES = [
     #
     # web.post('/api/admin/password/reset/link', send_password_reset_link),
     # web.post('/api/admin/password/reset/confirmed', confirmed_password_reset),
+
+    # facility
+    web.post('/facility', create_facility),
+    web.put('/facility/{id}', update_facility),
+    web.delete('/facility/{id}', delete_facility),
 ]

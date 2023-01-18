@@ -1,0 +1,240 @@
+from aiohttp.test_utils import ClientSession
+
+
+async def test_facility_create(cli: ClientSession):
+    # Успешное создание пользователя
+    create_user_data = {
+        'email': 'user@example.com',
+        'password': 'hackme'
+    }
+    resp = await cli.post('/admin/users', data=create_user_data)
+    assert resp.status == 201
+
+    # Успешная аутентификация
+    resp = await cli.post('/admin/login', data=create_user_data)
+    assert resp.status == 200
+    resp_data = await resp.json()
+    assert resp_data.get('access_token')
+    assert resp_data.get('refresh_token')
+
+    access_token = resp_data.get('access_token')
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    # Успешное создание объекта
+    facility1 = {
+        'name': 'gym next door 1',
+        'x': 123,
+        'y': 456,
+        'type': 'Gym',
+        'owner_name': 'OOO Gachimuchi Corp.',
+        'property_form': 'Private',
+        'length': 128,
+        'width': 32,
+        'area': 128 * 32,
+        'actual_workload': 123,
+        'annual_capacity': 456,
+        'notes': 'Для настоящих пацанов',
+        'height': 43,
+        'size': 12345,
+        'depth': 12,
+        'converting_type': 'RubberBitumen',
+        'is_accessible_for_disabled': True,
+        'paying_type': 'PartlyFree',
+        'who_can_use': 'Настоящие пацаны',
+        'link': 'https://sportsmap.spb.ru',
+        'phone_number': '88005553535',
+        'open_hours': 'Круглосуточно',
+        'eps': 12345,
+        'hidden': False,
+    }
+    resp = await cli.post('/facility', data=facility1, headers=headers)
+    assert resp.status == 201
+    assert (await resp.json()).get('id') is not None
+
+    # Неудачное создание объекта (без полей x, y)
+    facility2 = {
+        'name': 'gym next door 2',
+        'type': 'Gym',
+        'owner_name': 'OOO Gachimuchi Corp.',
+        'property_form': 'Private',
+        'length': 128,
+        'width': 32,
+        'area': 128 * 32,
+        'actual_workload': 123,
+        'annual_capacity': 456,
+        'notes': 'Для настоящих пацанов',
+        'height': 43,
+        'size': 12345,
+        'depth': 12,
+        'converting_type': 'RubberBitumen',
+        'is_accessible_for_disabled': True,
+        'paying_type': 'PartlyFree',
+        'who_can_use': 'Настоящие пацаны',
+        'link': 'https://sportsmap.spb.ru',
+        'phone_number': '88005553535',
+        'open_hours': 'Круглосуточно',
+        'eps': 12345,
+        'hidden': False,
+    }
+    resp = await cli.post('/facility', data=facility2, headers=headers)
+    assert resp.status == 400
+    assert (await resp.json()).get('message') == 'validation error'
+
+
+async def test_facility_update(cli: ClientSession):
+    # Успешное создание пользователя
+    create_user_data = {
+        'email': 'user@example.com',
+        'password': 'hackme'
+    }
+    resp = await cli.post('/admin/users', data=create_user_data)
+    assert resp.status == 201
+
+    # Успешная аутентификация
+    resp = await cli.post('/admin/login', data=create_user_data)
+    assert resp.status == 200
+    resp_data = await resp.json()
+    assert resp_data.get('access_token')
+    assert resp_data.get('refresh_token')
+
+    access_token = resp_data.get('access_token')
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    # Успешное создание объекта
+    facility1 = {
+        'name': 'gym next door 1',
+        'x': 123,
+        'y': 456,
+        'type': 'Gym',
+        'owner_name': 'OOO Gachimuchi Corp.',
+        'property_form': 'Private',
+        'length': 128,
+        'width': 32,
+        'area': 128 * 32,
+        'actual_workload': 123,
+        'annual_capacity': 456,
+        'notes': 'Для настоящих пацанов',
+        'height': 43,
+        'size': 12345,
+        'depth': 12,
+        'converting_type': 'RubberBitumen',
+        'is_accessible_for_disabled': True,
+        'paying_type': 'PartlyFree',
+        'who_can_use': 'Настоящие пацаны',
+        'link': 'https://sportsmap.spb.ru',
+        'phone_number': '88005553535',
+        'open_hours': 'Круглосуточно',
+        'eps': 12345,
+        'hidden': False,
+    }
+    resp = await cli.post('/facility', data=facility1, headers=headers)
+    assert resp.status == 201
+    created_facility_id = (await resp.json()).get('id')
+    assert created_facility_id is not None
+
+    # Успешное обновление объекта
+    resp = await cli.put(f'/facility/{created_facility_id}', data={
+        **facility1,
+        'x': 65536
+    }, headers=headers)
+    assert resp.status == 200
+    resp_json = await resp.json()
+    updated_facility_id = resp_json.get('id')
+    updated_facility_x = resp_json.get('x')
+    assert updated_facility_id == created_facility_id
+    assert updated_facility_x != facility1['x']
+    assert updated_facility_x == 65536
+
+
+async def test_facility_delete(cli: ClientSession):
+    # Успешное создание пользователя
+    create_user_data = {
+        'email': 'user@example.com',
+        'password': 'hackme'
+    }
+    resp = await cli.post('/admin/users', data=create_user_data)
+    assert resp.status == 201
+
+    # Успешная аутентификация
+    resp = await cli.post('/admin/login', data=create_user_data)
+    assert resp.status == 200
+    resp_data = await resp.json()
+    assert resp_data.get('access_token')
+    assert resp_data.get('refresh_token')
+
+    access_token = resp_data.get('access_token')
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    # Успешное создание объекта
+    facility1 = {
+        'name': 'gym next door 1',
+        'x': 123,
+        'y': 456,
+        'type': 'Gym',
+        'owner_name': 'OOO Gachimuchi Corp.',
+        'property_form': 'Private',
+        'length': 128,
+        'width': 32,
+        'area': 128 * 32,
+        'actual_workload': 123,
+        'annual_capacity': 456,
+        'notes': 'Для настоящих пацанов',
+        'height': 43,
+        'size': 12345,
+        'depth': 12,
+        'converting_type': 'RubberBitumen',
+        'is_accessible_for_disabled': True,
+        'paying_type': 'PartlyFree',
+        'who_can_use': 'Настоящие пацаны',
+        'link': 'https://sportsmap.spb.ru',
+        'phone_number': '88005553535',
+        'open_hours': 'Круглосуточно',
+        'eps': 12345,
+        'hidden': False,
+    }
+    resp = await cli.post('/facility', data=facility1, headers=headers)
+    assert resp.status == 201
+    created_facility_id = (await resp.json()).get('id')
+    assert created_facility_id is not None
+
+    # Успешное удаление объекта
+    resp = await cli.delete(f'/facility/{created_facility_id}', headers=headers)
+    assert resp.status == 204
+
+    # Снова создание объекта, чтобы проверить, как там удаление
+    facility1 = {
+        'name': 'gym next door 1',
+        'x': 123,
+        'y': 456,
+        'type': 'Gym',
+        'owner_name': 'OOO Gachimuchi Corp.',
+        'property_form': 'Private',
+        'length': 128,
+        'width': 32,
+        'area': 128 * 32,
+        'actual_workload': 123,
+        'annual_capacity': 456,
+        'notes': 'Для настоящих пацанов',
+        'height': 43,
+        'size': 12345,
+        'depth': 12,
+        'converting_type': 'RubberBitumen',
+        'is_accessible_for_disabled': True,
+        'paying_type': 'PartlyFree',
+        'who_can_use': 'Настоящие пацаны',
+        'link': 'https://sportsmap.spb.ru',
+        'phone_number': '88005553535',
+        'open_hours': 'Круглосуточно',
+        'eps': 12345,
+        'hidden': False,
+    }
+    resp = await cli.post('/facility', data=facility1, headers=headers)
+    assert resp.status == 201
+    created_facility_id = (await resp.json()).get('id')
+    assert created_facility_id is not None
