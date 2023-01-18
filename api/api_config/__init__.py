@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 from loguru import logger
@@ -8,69 +10,36 @@ from dataclasses import dataclass
 class Config:
     API_HOST: str | None
     API_PORT: int | None
-    API_DB_USER: str | None
-    API_DB_PASSWORD: str | None
-    API_DB_HOST: str | None
-    API_DB_PORT: str | None
-    API_DB_NAME: str | None
+    API_DB_URL: str
     API_DB_USE_SSL: bool
-    API_DEBUG_MODE: bool
 
+    @staticmethod
+    def new() -> Config:
+        api_host = os.getenv('API_PATH')
+        if api_host is None:
+            logger.warning('API_HOST is none, use 0.0.0.0 by default')
+            api_host = '0.0.0.0'
 
-def get_config() -> Config:
-    API_HOST = os.getenv('API_PATH')
-    if not API_HOST:
-        logger.warning('API_HOST is none, use localhost by default')
-    API_PORT = os.getenv('API_PORT')
-    if not API_PORT:
-        logger.warning('API_PORT is none, use 8080 by default')
-        API_PORT = 8080
-    try:
-        API_PORT = int(API_PORT)
-    except ValueError:
-        logger.warning('API_PORT is not int, use 8080 by default')
-        API_PORT = 8080
+        api_port = os.getenv('API_PORT')
+        if api_port is None:
+            logger.warning('API_PORT is none, use 8080 by default')
+            api_port = 8080
 
-    API_DB_USER = os.getenv('API_DB_USER')
-    if not API_DB_USER:
-        logger.warning('API_DB_USER is none')
+        api_db_url = os.getenv('API_DB_URL')
+        if api_db_url is None:
+            logger.warning('API_DB_URL is none')
+            raise ValueError('CONFIG: ENVIRONMENT VARIABLE API_DB_URL is None')
 
-    API_DB_PASSWORD = os.getenv('API_DB_PASSWORD')
-    if not API_DB_PASSWORD:
-        logger.warning('API_DB_PASSWORD is none')
+        api_db_use_ssl = os.getenv('API_DB_USE_SSL')
+        if api_db_use_ssl is None:
+            logger.warning('API_DB_USE_SSL is none, use False by default')
+            api_db_use_ssl = False
+        else:
+            api_db_use_ssl = True
 
-    API_DB_HOST = os.getenv('API_DB_HOST')
-    if not API_DB_HOST:
-        logger.warning('API_DB_HOST is none')
-
-    API_DB_PORT = os.getenv('API_DB_PORT')
-    if not API_DB_PORT:
-        logger.warning('API_DB_PORT is none')
-
-    API_DB_NAME = os.getenv('API_DB_NAME')
-    if not API_DB_NAME:
-        logger.warning('API_DB_NAME is none')
-
-    API_DB_USE_SSL = os.getenv('API_DB_USE_SSL')
-    if not API_DB_USE_SSL:
-        logger.warning('API_DB_USE_SSL is none, use False by default')
-        API_DB_USE_SSL = False
-    API_DB_USE_SSL = bool(API_DB_USE_SSL)
-
-    API_DEBUG_MODE = os.getenv('API_DEBUG_MODE')
-    if not API_DEBUG_MODE:
-        logger.warning('API_DEBUG_MODE is none, use False by default')
-        API_DEBUG_MODE = False
-    API_DEBUG_MODE = bool(API_DEBUG_MODE)
-
-    return Config(
-        API_HOST=API_HOST,
-        API_PORT=API_PORT,
-        API_DB_USER=API_DB_USER,
-        API_DB_PASSWORD=API_DB_PASSWORD,
-        API_DB_HOST=API_DB_HOST,
-        API_DB_PORT=API_DB_PORT,
-        API_DB_NAME=API_DB_NAME,
-        API_DB_USE_SSL=API_DB_USE_SSL,
-        API_DEBUG_MODE=API_DEBUG_MODE,
-    )
+        return Config(
+            API_HOST=api_host,
+            API_PORT=api_port,
+            API_DB_URL=api_db_url,
+            API_DB_USE_SSL=api_db_use_ssl
+        )

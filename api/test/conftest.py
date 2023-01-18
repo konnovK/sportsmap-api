@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from api.app import create_app
-from api_config import get_config
+from api_config import Config
 from db.schema import metadata
 
 
@@ -16,16 +16,14 @@ def loop():
 
 @pytest.fixture()
 async def setup_db(loop):
-    config = get_config()
-    db_conn_str = f"postgresql+asyncpg://{config.API_DB_USER}:{config.API_DB_PASSWORD}" \
-                  f"@{config.API_DB_HOST}:{config.API_DB_PORT}/{config.API_DB_NAME}"
+    config = Config.new()
+    db_conn_str = config.API_DB_URL
     connect_args = {}
     if config.API_DB_USE_SSL:
         connect_args["ssl"] = ssl.create_default_context(cafile='./CA.pem')
 
     engine = create_async_engine(
         db_conn_str,
-        echo=config.API_DEBUG_MODE,
         connect_args=connect_args
     )
     async with engine.begin() as conn:
@@ -45,6 +43,6 @@ async def connection(loop, setup_db):
 
 @pytest.fixture
 def cli(loop, aiohttp_client, setup_db):
-    config = get_config()
+    config = Config.new()
     app = create_app(config)
     return loop.run_until_complete(aiohttp_client(app))

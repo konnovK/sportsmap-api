@@ -38,9 +38,7 @@ def make_alembic_config(cmd_opts: argparse.Namespace) -> Config:
         config.set_main_option('script_location',
                                os.path.join(base_path, alembic_location))
 
-    db_url = f"postgresql+asyncpg://{cmd_opts.db_user}:{cmd_opts.db_password}" \
-             f"@{cmd_opts.db_host}:{cmd_opts.db_port}/{cmd_opts.db_name}"
-    config.set_main_option('sqlalchemy.url', db_url)
+    config.set_main_option('sqlalchemy.url', cmd_opts.db_url)
 
     return config
 
@@ -51,28 +49,8 @@ def main():
     alembic.parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
 
     alembic.parser.add_argument(
-        '--db-user', default=None,
-        help='Database User',
-        required=True
-    )
-    alembic.parser.add_argument(
-        '--db-password', default=None,
-        help='Database User Password',
-        required=True
-    )
-    alembic.parser.add_argument(
-        '--db-host', default=None,
-        help='Database Host',
-        required=True
-    )
-    alembic.parser.add_argument(
-        '--db-port', default=None,
-        help='Database Port',
-        required=True
-    )
-    alembic.parser.add_argument(
-        '--db-name', default=None,
-        help='Database Name',
+        '--db-url', default=None,
+        help='Database URL',
         required=True
     )
 
