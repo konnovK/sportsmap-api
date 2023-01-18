@@ -1,9 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
-name: CI
+name: CI_PR
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -12,10 +10,7 @@ permissions:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
-    
-    
     services:
       postgres:
         image: docker://postgres
@@ -25,7 +20,6 @@ jobs:
           POSTGRES_USER: user123
           POSTGRES_PASSWORD: 123
           POSTGRES_DB: sportsmap_test
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.10
