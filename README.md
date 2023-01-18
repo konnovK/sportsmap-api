@@ -15,13 +15,9 @@
 
 - `API_HOST` - хост, на котором запускается бэкенд
 - `API_PORT` - порт, на котором запустится бэкенд
-- `API_DB_USER` - пользователь базы данных
-- `API_DB_PASSWORD` - пароль пользователя базы данных
-- `API_DB_HOST` - хост базы данных
-- `API_DB_PORT` - порт, на котором запустится база данных
-- `API_DB_NAME` - название базы данных
+- `API_DB_URL` - адрес базы данных, по некоторым причинам он должен
+иметь вид `postgresql+asyncpg://user:password@host:port/dbname`
 - `API_DB_USE_SSL` - нужен ли сертификат ssl для доступа к базе данных
-- `API_DEBUG_MODE` - дебаг режим
 
 ## Разработка
 
@@ -33,10 +29,12 @@
 
 ### Быстрые команды
 
-- `make` Отобразить список доступных команд
+**Makefile**, расположенный в `./api`:
+
 - `make devenv` Создать и настроить виртуальное окружение для разработки
 - `make postgres` Создать docker контейнеры с базами данных для тестов и разработки
 - `make migrate` Применить миграции на базы данных для тестов и разработки
+- `make migrations` Создать миграции
 - `make lint` Запустить линтер [pylama](https://pypi.org/project/pylama/)
 - `make test` Запустить тесты [pytest](https://pypi.org/project/pytest/)
 - `make run` Запустить API локально
@@ -58,7 +56,6 @@ make migrate
 ```commandline
 make devenv
 make postgres
-make migrate
 make test
 ```
 
@@ -86,14 +83,10 @@ API разворачивается в виде docker контрейнера, в
 - `TOKEN` - токен registry от yandex.cloud
 - `VERSION` - версия контейнера
 - `API_PORT` - порт, на котором будет запущена API
-- `DB_USER` - юзер БД в проде
-- `DB_PASSWORD` - пароль юзера БД в проде
-- `DB_HOST` - хост БД в проде
-- `DB_PORT` - порт БД в проде
-- `DB_NAME` - название БД в проде
+- `DB_URL` - URL базы данных в проде, по некоторым причинам он должен
+иметь вид `postgresql+asyncpg://user:password@host:port/dbname`
 
 ### Команды
 
 - `make deploy` - создаст image,
-запушит его в registry от yandex.cloud, а также накатит
-миграции на бд **(TODO: сделать github action для этого)**
+запушит его в registry от yandex.cloud **(TODO: сделать github action для этого)**

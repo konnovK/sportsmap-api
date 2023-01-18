@@ -34,7 +34,7 @@ postgres:
 migrate:
 	$(PYTHON_BIN)/python -m db --db-url $(DEV_DB_URL) upgrade head
 
-make_migration:
+migrations:
 	$(PYTHON_BIN)/python -m db --db-url $(DEV_DB_URL) revision --message="some migration" --autogenerate
 
 lint:
