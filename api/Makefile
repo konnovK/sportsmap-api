@@ -47,3 +47,9 @@ test: lint
 run:
 	API_DB_URL=$(DEV_DB_URL) \
 	$(PYTHON_BIN)/python main.py
+
+docker:
+	docker build --build-arg API_PORT=8080 --tag=dev_sportsmap_api .
+
+rund:
+	docker run --publish 8080:8080 --env API_DB_URL=$(DEV_DB_URL) --name dev_sportsmap_api dev_sportsmap_api
