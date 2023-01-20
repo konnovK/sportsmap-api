@@ -53,6 +53,37 @@ async def test_facility_create(cli: ClientSession):
     assert resp.status == 201
     assert (await resp.json()).get('id') is not None
 
+    # Неудачное создание объекта (неправильный enum)
+    facility3 = {
+        'name': 'gym next door 2',
+        'x': 123,
+        'y': 456,
+        'type': 'INVALID',
+        'owner_name': 'OOO Gachimuchi Corp.',
+        'property_form': 'Private',
+        'length': 128,
+        'width': 32,
+        'area': 128 * 32,
+        'actual_workload': 123,
+        'annual_capacity': 456,
+        'notes': 'Для настоящих пацанов',
+        'height': 43,
+        'size': 12345,
+        'depth': 12,
+        'converting_type': 'RubberBitumen',
+        'is_accessible_for_disabled': True,
+        'paying_type': 'PartlyFree',
+        'who_can_use': 'Настоящие пацаны',
+        'link': 'https://sportsmap.spb.ru',
+        'phone_number': '88005553535',
+        'open_hours': 'Круглосуточно',
+        'eps': 12345,
+        'hidden': False,
+    }
+    resp = await cli.post('/facility', data=facility3, headers=headers)
+    assert resp.status == 400
+    assert (await resp.json()).get('message') == 'bad enum value'
+
     # Неудачное создание объекта (без полей x, y)
     facility2 = {
         'name': 'gym next door 2',
