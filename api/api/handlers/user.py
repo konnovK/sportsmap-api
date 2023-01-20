@@ -3,6 +3,7 @@ from aiohttp_apispec import (
     docs,
     request_schema,
 )
+import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,9 +12,6 @@ from api.schemas.error import ErrorResponse
 from api.schemas.user import UserResponse, CreateUserRequest, LoginRequest, LoginResponse, RefreshTokenRequest, \
     UpdateSelfRequest
 from db import User
-import sqlalchemy as sa
-
-from utils import hash_password
 
 
 @docs(
@@ -78,7 +76,7 @@ async def login(request: web.Request) -> web.Response:
                 await session.execute(
                     sa.select(User)
                     .where(User.email == user_email)
-                    .where(User.password_hash == hash_password(user_password))
+                    .where(User.password_hash == User.hash_password(user_password))
                 )).scalars().first()
             if existed_user is None:
                 raise web.HTTPBadRequest(text='wrong email or password')
@@ -216,6 +214,6 @@ async def update_self(request: web.Request) -> web.Response:
             if data.get('last_name'):
                 user.last_name = data.get('last_name')
             if data.get('password'):
-                user.password_hash = hash_password(data.get('password'))
+                user.password_hash = User.hash_password(data.get('password'))
 
     return web.json_response(UserResponse().dump(user))

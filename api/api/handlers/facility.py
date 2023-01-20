@@ -4,7 +4,7 @@ from aiohttp_apispec import (
     request_schema,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DBAPIError
 import sqlalchemy as sa
 
 from api.jwt import jwt_middleware
@@ -46,6 +46,8 @@ async def create_facility(request: web.Request) -> web.Response:
                 session.add(facility)
         except IntegrityError:
             return web.json_response(status=409)
+        except DBAPIError:
+            raise web.HTTPBadRequest(text='bad enum value')
     return web.json_response(FacilityResponse().dump(facility), status=201)
 
 
@@ -160,6 +162,8 @@ async def get_facility_by_id(request: web.Request) -> web.Response:
                 if not facility:
                     raise web.HTTPBadRequest(text="facility with this id doesn't exists")
         except IntegrityError:
+            raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+        except DBAPIError:
             raise web.HTTPBadRequest(text="facility with this id doesn't exists")
     return web.json_response(FacilityResponse().dump(facility), status=200)
 
