@@ -33,6 +33,4 @@ COPY . .
 ARG API_PORT
 EXPOSE ${API_PORT}
 
-RUN wget "https://storage.yandexcloud.net/cloud-certs/CA.pem"
-
 CMD [ "/usr/share/python3/app/bin/python3", "main.py"]
