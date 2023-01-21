@@ -5,12 +5,16 @@ from aiohttp_apispec import (
     querystring_schema
 )
 from sqlalchemy.exc import IntegrityError, DBAPIError
-import sqlalchemy as sa
 
+from db import Facility
 from api.jwt import jwt_middleware
 from api.schemas.error import ErrorResponse
-from api.schemas.facility import FacilityRequest, FacilityResponse, FacilityResponseList, SearchQuery
-from db import Facility
+from api.schemas.facility import (
+    FacilityRequest,
+    FacilityResponse,
+    FacilityResponseList,
+    SearchQuery
+)
 
 
 @docs(
@@ -83,12 +87,8 @@ async def update_facility(request: web.Request) -> web.Response:
 
     session = request.app['session']
 
-    facility = (
-        await session.execute(
-            sa.select(Facility)
-            .where(Facility.id == request.match_info['id'])
-        )
-    ).scalars().first()
+    facility = await Facility.get_by_id(session, request.match_info['id'])
+
     for k in facility_updated_fields:
         setattr(facility, k, facility_updated_fields[k])
 
@@ -119,12 +119,7 @@ async def update_facility(request: web.Request) -> web.Response:
 async def delete_facility(request: web.Request) -> web.Response:
     session = request.app['session']
 
-    facility = (
-        await session.execute(
-            sa.select(Facility)
-            .where(Facility.id == request.match_info['id'])
-        )
-    ).scalars().first()
+    facility = await Facility.get_by_id(session, request.match_info['id'])
     await session.delete(facility)
 
     return web.json_response(status=204)
@@ -153,12 +148,7 @@ async def delete_facility(request: web.Request) -> web.Response:
 async def get_facility_by_id(request: web.Request) -> web.Response:
     session = request.app['session']
     try:
-        facility = (
-            await session.execute(
-                sa.select(Facility)
-                .where(Facility.id == request.match_info['id'])
-            )
-        ).scalars().first()
+        facility = await Facility.get_by_id(session, request.match_info['id'])
         if not facility:
             raise web.HTTPBadRequest(text="facility with this id doesn't exists")
     except IntegrityError:
@@ -191,9 +181,7 @@ async def get_facility_by_id(request: web.Request) -> web.Response:
 async def get_all_facilities(request: web.Request) -> web.Response:
     session = request.app['session']
 
-    facilities = (
-        await session.execute(sa.select(Facility))
-    ).scalars().all()
+    facilities = await Facility.get_all(session)
 
     return web.json_response(FacilityResponseList().dump({
         'count': len(facilities),

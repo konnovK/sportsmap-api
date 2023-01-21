@@ -3,14 +3,19 @@ from aiohttp_apispec import (
     docs,
     request_schema,
 )
-import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 
+from db import User
 from api.jwt import jwt_middleware, JWTException  # , JWTException
 from api.schemas.error import ErrorResponse
-from api.schemas.user import UserResponse, CreateUserRequest, LoginRequest, LoginResponse, RefreshTokenRequest, \
+from api.schemas.user import (
+    UserResponse,
+    CreateUserRequest,
+    LoginRequest,
+    LoginResponse,
+    RefreshTokenRequest,
     UpdateSelfRequest
-from db import User
+)
 
 
 @docs(
@@ -69,12 +74,7 @@ async def login(request: web.Request) -> web.Response:
 
     session = request.app['session']
 
-    existed_user = (
-        await session.execute(
-            sa.select(User)
-            .where(User.email == user_email)
-            .where(User.password_hash == User.hash_password(user_password))
-        )).scalars().first()
+    existed_user = await User.get_by_email_and_password(session, user_email, user_password)
     if existed_user is None:
         raise web.HTTPBadRequest(text='wrong email or password')
 
@@ -118,12 +118,7 @@ async def refresh_token(request: web.Request) -> web.Response:
     if not user_email:
         raise web.HTTPBadRequest(text='wrong access token')
 
-    user = (
-        await session.execute(
-            sa.select(User)
-            .where(User.email == user_email)
-        )
-    ).scalars().first()
+    user = await User.get_by_email(session, user_email)
     if user is None:
         raise web.HTTPBadRequest(text='wrong access token')
 
@@ -167,9 +162,7 @@ async def delete_self(request: web.Request) -> web.Response:
 
     session = request.app['session']
 
-    user = (
-        await session.execute(sa.select(User).where(User.email == user_email))
-    ).scalars().first()
+    user = await User.get_by_email(session, user_email)
     await session.delete(user)
 
     return web.json_response(status=204)
@@ -202,9 +195,7 @@ async def update_self(request: web.Request) -> web.Response:
 
     session = request.app['session']
 
-    user = (
-        await session.execute(sa.select(User).where(User.email == user_email))
-    ).scalars().first()
+    user = await User.get_by_email(session, user_email)
     if user is None:
         return web.HTTPBadRequest(text='unknown user email')
     if data.get('first_name'):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 import uuid
 
@@ -141,4 +143,21 @@ class Facility(Base):
 
         facilities = (await session.execute(stmt)).scalars().all()
 
+        return facilities
+
+    @staticmethod
+    async def get_by_id(session: AsyncSession, id: str) -> Facility | None:
+        facility = (
+            await session.execute(
+                sa.select(Facility)
+                .where(Facility.id == id)
+            )
+        ).scalars().first()
+        return facility
+
+    @staticmethod
+    async def get_all(session: AsyncSession) -> list[Facility]:
+        facilities = (
+            await session.execute(sa.select(Facility))
+        ).scalars().all()
         return facilities
