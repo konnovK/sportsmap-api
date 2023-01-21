@@ -5,7 +5,6 @@ from aiohttp_apispec import (
 )
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.jwt import jwt_middleware, JWTException  # , JWTException
 from api.schemas.error import ErrorResponse
@@ -37,13 +36,12 @@ async def register(request: web.Request) -> web.Response:
     data = CreateUserRequest().load(await request.json())
     user = User(**data)
 
-    async with request.app['session']() as session:
-        try:
-            async with session.begin():
-                session: AsyncSession
-                session.add(user)
-        except IntegrityError:
-            return web.json_response(status=409)
+    session = request.app['session']
+    try:
+        session.add(user)
+        await session.flush()
+    except IntegrityError:
+        raise web.HTTPConflict()
 
     return web.json_response(UserResponse().dump(user), status=201)
 
@@ -69,17 +67,17 @@ async def login(request: web.Request) -> web.Response:
     user_email = data.get('email')
     user_password = data.get('password')
 
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            existed_user = (
-                await session.execute(
-                    sa.select(User)
-                    .where(User.email == user_email)
-                    .where(User.password_hash == User.hash_password(user_password))
-                )).scalars().first()
-            if existed_user is None:
-                raise web.HTTPBadRequest(text='wrong email or password')
+    session = request.app['session']
+
+    existed_user = (
+        await session.execute(
+            sa.select(User)
+            .where(User.email == user_email)
+            .where(User.password_hash == User.hash_password(user_password))
+        )).scalars().first()
+    if existed_user is None:
+        raise web.HTTPBadRequest(text='wrong email or password')
+
     access_token, refresh_token, expires_in = request.app['jwt'].create_jwt(existed_user.email)
 
     return web.json_response({
@@ -111,6 +109,8 @@ async def refresh_token(request: web.Request) -> web.Response:
     access_token = data.get('access_token')
     refresh_token = data.get('refresh_token')
 
+    session = request.app['session']
+
     try:
         user_email = request.app['jwt'].get_email_from_access_token(access_token)
     except JWTException:
@@ -118,17 +118,15 @@ async def refresh_token(request: web.Request) -> web.Response:
     if not user_email:
         raise web.HTTPBadRequest(text='wrong access token')
 
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            user = (
-                await session.execute(
-                    sa.select(User)
-                    .where(User.email == user_email)
-                )
-            ).scalars().first()
-            if user is None:
-                raise web.HTTPBadRequest(text='wrong access token')
+    user = (
+        await session.execute(
+            sa.select(User)
+            .where(User.email == user_email)
+        )
+    ).scalars().first()
+    if user is None:
+        raise web.HTTPBadRequest(text='wrong access token')
+
     try:
         access_token, refresh_token, expires_in = request.app['jwt'].refresh_jwt(access_token, refresh_token)
     except JWTException:
@@ -166,13 +164,14 @@ async def refresh_token(request: web.Request) -> web.Response:
 @jwt_middleware
 async def delete_self(request: web.Request) -> web.Response:
     user_email = request.app['email']
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            user = (
-                await session.execute(sa.select(User).where(User.email == user_email))
-            ).scalars().first()
-            await session.delete(user)
+
+    session = request.app['session']
+
+    user = (
+        await session.execute(sa.select(User).where(User.email == user_email))
+    ).scalars().first()
+    await session.delete(user)
+
     return web.json_response(status=204)
 
 
@@ -201,19 +200,19 @@ async def update_self(request: web.Request) -> web.Response:
     user_email = request.app['email']
     data = UpdateSelfRequest().load(await request.json())
 
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            user = (
-                await session.execute(sa.select(User).where(User.email == user_email))
-            ).scalars().first()
-            if user is None:
-                return web.HTTPBadRequest(text='unknown user email')
-            if data.get('first_name'):
-                user.first_name = data.get('first_name')
-            if data.get('last_name'):
-                user.last_name = data.get('last_name')
-            if data.get('password'):
-                user.password_hash = User.hash_password(data.get('password'))
+    session = request.app['session']
+
+    user = (
+        await session.execute(sa.select(User).where(User.email == user_email))
+    ).scalars().first()
+    if user is None:
+        return web.HTTPBadRequest(text='unknown user email')
+    if data.get('first_name'):
+        user.first_name = data.get('first_name')
+    if data.get('last_name'):
+        user.last_name = data.get('last_name')
+    if data.get('password'):
+        user.password_hash = User.hash_password(data.get('password'))
+    await session.flush()
 
     return web.json_response(UserResponse().dump(user))

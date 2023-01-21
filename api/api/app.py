@@ -9,7 +9,7 @@ from loguru import logger
 
 from api.handlers import ROUTES
 from api.jwt import JWT
-from api.middlewares import error_middleware
+from api.middlewares import transaction_middleware, error_middleware
 from api_config import Config
 from api.payloads import AsyncGenJSONListPayload, JsonPayload
 from utils import setup_db
@@ -22,8 +22,8 @@ def create_app(config: Config) -> web.Application:
     app = web.Application(
         logger=logger,
     )
-
     app.middlewares.append(error_middleware)
+    app.middlewares.append(transaction_middleware)
 
     app['jwt'] = JWT()
 

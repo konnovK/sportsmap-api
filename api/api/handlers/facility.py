@@ -4,7 +4,6 @@ from aiohttp_apispec import (
     request_schema,
     querystring_schema
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, DBAPIError
 import sqlalchemy as sa
 
@@ -40,15 +39,16 @@ async def create_facility(request: web.Request) -> web.Response:
 
     facility = Facility(**data)
 
-    async with request.app['session']() as session:
-        try:
-            async with session.begin():
-                session: AsyncSession
-                session.add(facility)
-        except IntegrityError:
-            return web.json_response(status=409)
-        except DBAPIError:
-            raise web.HTTPBadRequest(text='bad enum value')
+    session = request.app['session']
+
+    try:
+        session.add(facility)
+        await session.flush()
+    except IntegrityError:
+        raise web.HTTPConflict()
+    except DBAPIError:
+        raise web.HTTPBadRequest(text='bad enum value')
+
     return web.json_response(FacilityResponse().dump(facility), status=201)
 
 
@@ -81,17 +81,19 @@ async def update_facility(request: web.Request) -> web.Response:
         if data.get(k) is not None:
             facility_updated_fields[k] = data.get(k)
 
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            facility = (
-                await session.execute(
-                    sa.select(Facility)
-                    .where(Facility.id == request.match_info['id'])
-                )
-            ).scalars().first()
-            for k in facility_updated_fields:
-                setattr(facility, k, facility_updated_fields[k])
+    session = request.app['session']
+
+    facility = (
+        await session.execute(
+            sa.select(Facility)
+            .where(Facility.id == request.match_info['id'])
+        )
+    ).scalars().first()
+    for k in facility_updated_fields:
+        setattr(facility, k, facility_updated_fields[k])
+
+    await session.flush()
+
     return web.json_response(FacilityResponse().dump(facility), status=200)
 
 
@@ -115,16 +117,15 @@ async def update_facility(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def delete_facility(request: web.Request) -> web.Response:
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            facility = (
-                await session.execute(
-                    sa.select(Facility)
-                    .where(Facility.id == request.match_info['id'])
-                )
-            ).scalars().first()
-            await session.delete(facility)
+    session = request.app['session']
+
+    facility = (
+        await session.execute(
+            sa.select(Facility)
+            .where(Facility.id == request.match_info['id'])
+        )
+    ).scalars().first()
+    await session.delete(facility)
 
     return web.json_response(status=204)
 
@@ -150,22 +151,20 @@ async def delete_facility(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def get_facility_by_id(request: web.Request) -> web.Response:
-    async with request.app['session']() as session:
-        try:
-            async with session.begin():
-                session: AsyncSession
-                facility = (
-                    await session.execute(
-                        sa.select(Facility)
-                        .where(Facility.id == request.match_info['id'])
-                    )
-                ).scalars().first()
-                if not facility:
-                    raise web.HTTPBadRequest(text="facility with this id doesn't exists")
-        except IntegrityError:
+    session = request.app['session']
+    try:
+        facility = (
+            await session.execute(
+                sa.select(Facility)
+                .where(Facility.id == request.match_info['id'])
+            )
+        ).scalars().first()
+        if not facility:
             raise web.HTTPBadRequest(text="facility with this id doesn't exists")
-        except DBAPIError:
-            raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+    except IntegrityError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+    except DBAPIError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
     return web.json_response(FacilityResponse().dump(facility), status=200)
 
 
@@ -190,12 +189,11 @@ async def get_facility_by_id(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def get_all_facilities(request: web.Request) -> web.Response:
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            facilities = (
-                await session.execute(sa.select(Facility))
-            ).scalars().all()
+    session = request.app['session']
+
+    facilities = (
+        await session.execute(sa.select(Facility))
+    ).scalars().all()
 
     return web.json_response(FacilityResponseList().dump({
         'count': len(facilities),
@@ -226,6 +224,9 @@ async def get_all_facilities(request: web.Request) -> web.Response:
 @jwt_middleware
 async def search_facilities(request: web.Request) -> web.Response:
     # data = SearchQuery().load(await request.json())
+
+    # session = request.app['session']
+
     # if data.get('q'):
     #     q = data.get('q')
     #     data.pop('q')

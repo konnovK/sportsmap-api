@@ -21,7 +21,7 @@ async def setup_db(app: web.Application, config: Config):
     )
 
     Session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-    app['session'] = Session
+    app['sessionmaker'] = Session
 
     try:
         yield

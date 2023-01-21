@@ -45,6 +45,6 @@ def cli(loop, aiohttp_client, setup_db):
     app: web.Application = create_app(config)
 
     app.cleanup_ctx.pop()
-    app['session'] = setup_db
+    app['sessionmaker'] = setup_db
 
     return loop.run_until_complete(aiohttp_client(app))
