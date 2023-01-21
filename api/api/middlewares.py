@@ -19,16 +19,16 @@ async def error_middleware(request: web.Request, handler):
         }), status=status_code)
     except marshmallow.exceptions.ValidationError as err:
         logger.debug(f'validation error: {err}')
-        raise web.HTTPBadRequest(body=ErrorResponse().load({
+        status_code = 400
+        return web.json_response(ErrorResponse().load({
             'message': 'validation error',
             'detail': err.messages
-        }))
+        }), status=status_code)
     except Exception as e:
-        # Исключения, которые бросили не мы
         logger.exception(e)
         status_code = 500
         return web.json_response(ErrorResponse().load({
-            'message': str(e),
+            'message': 'internal server error',
             'detail': {}
         }), status=status_code)
 
@@ -43,6 +43,6 @@ async def transaction_middleware(request: web.Request, handler):
             resp = await handler(request)
             await session.commit()
             return resp
-        except Exception as e:
+        except Exception:
             await session.rollback()
-            raise e
+            raise
