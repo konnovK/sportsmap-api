@@ -9,7 +9,7 @@ class CreateUserRequest(Schema):
 
 
 class UserResponse(Schema):
-    id = fields.String(required=True, nullable=False)
+    id = fields.UUID(required=True, nullable=False)
     first_name = fields.String()
     last_name = fields.String()
     email = fields.Email(required=True, nullable=False)
@@ -21,7 +21,7 @@ class LoginRequest(Schema):
 
 
 class LoginResponse(Schema):
-    id = fields.String()
+    id = fields.UUID()
     first_name = fields.String()
     last_name = fields.String()
     email = fields.Email()

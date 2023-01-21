@@ -3,6 +3,7 @@ import uuid
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
 from .schema import Base
@@ -102,3 +103,42 @@ class Facility(Base):
         self.open_hours = kwargs.get('open_hours')
         self.eps = kwargs.get('eps')
         self.hidden = kwargs.get('hidden')
+
+    def __repr__(self):
+        return f'Facility(name={self.name} id={self.id})'
+
+    def __str__(self):
+        return f'Facility(name={self.name} id={self.id})'
+
+    @staticmethod
+    async def search(
+            session: AsyncSession,
+            q: str | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            sort_by: str | None = None,
+            sort_desc: bool | None = None,
+            fields: dict | None = None
+    ):
+        stmt = sa.select(Facility)
+
+        conditions = []
+        for f in fields:
+            conditions.append(getattr(Facility, f) == fields[f])
+        for c in conditions:
+            stmt = stmt.where(c)
+
+        if sort_by:
+            if sort_desc:
+                stmt = stmt.order_by(sa.desc(sort_by))
+            else:
+                stmt = stmt.order_by(sort_by)
+
+        if limit:
+            stmt = stmt.limit(limit)
+        if offset:
+            stmt = stmt.offset(offset)
+
+        facilities = (await session.execute(stmt)).scalars().all()
+
+        return facilities

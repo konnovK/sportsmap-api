@@ -2,6 +2,7 @@ from aiohttp import web
 from aiohttp_apispec import (
     docs,
     request_schema,
+    querystring_schema
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, DBAPIError
@@ -9,7 +10,7 @@ import sqlalchemy as sa
 
 from api.jwt import jwt_middleware
 from api.schemas.error import ErrorResponse
-from api.schemas.facility import FacilityRequest, FacilityResponse, FacilityResponseList
+from api.schemas.facility import FacilityRequest, FacilityResponse, FacilityResponseList, SearchQuery
 from db import Facility
 
 
@@ -200,3 +201,47 @@ async def get_all_facilities(request: web.Request) -> web.Response:
         'count': len(facilities),
         'data': [FacilityResponse().dump(facility) for facility in facilities]
     }), status=200)
+
+
+@docs(
+    tags=["Facilities"],
+    summary="Поиск спортивных объектов",
+    description="Типа очень умный поиск спортивных объектов, с фильтрами и прочей шнягой",
+    responses={
+        200: {
+            "schema": FacilityResponseList,
+            "description": "Полученные объекты"
+        },
+        400: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
+        },
+        401: {
+            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
+                           "Authorization: Bearer 'текст токена') "
+        },
+    },
+)
+@querystring_schema(SearchQuery)
+@jwt_middleware
+async def search_facilities(request: web.Request) -> web.Response:
+    # data = SearchQuery().load(await request.json())
+    # if data.get('q'):
+    #     q = data.get('q')
+    #     data.pop('q')
+    # if data.get('limit'):
+    #     limit = data.get('limit')
+    #     data.pop('limit')
+    # if data.get('offset'):
+    #     offset = data.get('offset')
+    #     data.pop('offset')
+    # if data.get('sort_by'):
+    #     sort_by = data.get('sort_by')
+    #     data.pop('sort_by')
+    # if data.get('sort_desc'):
+    #     sort_desc = data.get('sort_desc')
+    #     data.pop('sort_desc')
+
+    # await Facility.search()
+
+    return web.json_response(status=501)
