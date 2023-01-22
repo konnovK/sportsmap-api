@@ -107,7 +107,7 @@ class Facility(Base):
         self.hidden = kwargs.get('hidden')
 
     def __repr__(self):
-        return f'Facility(name={self.name} id={self.id})'
+        return f'Facility(name={self.name} id={self.id} ({self.x};{self.y}))'
 
     def __str__(self):
         return f'Facility(name={self.name} id={self.id})'
@@ -118,23 +118,35 @@ class Facility(Base):
             q: str | None = None,
             limit: int | None = None,
             offset: int | None = None,
-            sort_by: str | None = None,
-            sort_desc: bool | None = None,
-            fields: dict | None = None
+            order_by: str | None = None,
+            order_desc: bool | None = None,
+            filters: list[dict] | None = None
     ):
         stmt = sa.select(Facility)
 
         conditions = []
-        for f in fields:
-            conditions.append(getattr(Facility, f) == fields[f])
-        for c in conditions:
-            stmt = stmt.where(c)
+        for f in filters:
+            cc = []
+            field = f['field']
+            eq = f.get('eq')
+            lt = f.get('lt')
+            gt = f.get('gt')
+            if eq:
+                cc.append(getattr(Facility, field) == eq)
+            if lt:
+                cc.append(getattr(Facility, field) <= lt)
+            if gt:
+                cc.append(getattr(Facility, field) >= gt)
+            conditions.append(sa.and_(*cc))
+        stmt = stmt.where(sa.or_(*conditions))
+        # for c in conditions:
+        #     stmt = stmt.where(c)
 
-        if sort_by:
-            if sort_desc:
-                stmt = stmt.order_by(sa.desc(sort_by))
+        if order_by:
+            if order_desc:
+                stmt = stmt.order_by(sa.desc(order_by))
             else:
-                stmt = stmt.order_by(sort_by)
+                stmt = stmt.order_by(order_by)
 
         if limit:
             stmt = stmt.limit(limit)

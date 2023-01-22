@@ -1,8 +1,7 @@
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    request_schema,
-    querystring_schema
+    request_schema
 )
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
@@ -208,29 +207,31 @@ async def get_all_facilities(request: web.Request) -> web.Response:
         },
     },
 )
-@querystring_schema(SearchQuery)
+@request_schema(SearchQuery)
 @jwt_middleware
 async def search_facilities(request: web.Request) -> web.Response:
-    # data = SearchQuery().load(await request.json())
+    data = SearchQuery().load(await request.json())
 
-    # session = request.app['session']
+    session = request.app['session']
 
-    # if data.get('q'):
-    #     q = data.get('q')
-    #     data.pop('q')
-    # if data.get('limit'):
-    #     limit = data.get('limit')
-    #     data.pop('limit')
-    # if data.get('offset'):
-    #     offset = data.get('offset')
-    #     data.pop('offset')
-    # if data.get('sort_by'):
-    #     sort_by = data.get('sort_by')
-    #     data.pop('sort_by')
-    # if data.get('sort_desc'):
-    #     sort_desc = data.get('sort_desc')
-    #     data.pop('sort_desc')
+    q = data.get('q')
+    limit = data.get('limit')
+    offset = data.get('offset')
+    order_by = data.get('order_by')
+    order_desc = data.get('order_desc')
+    filters = data.get('filters')
 
-    # await Facility.search()
+    facilities = await Facility.search(
+        session,
+        q=q,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        order_desc=order_desc,
+        filters=filters
+    )
 
-    return web.json_response(status=501)
+    return web.json_response(FacilityResponseList().dump({
+        'count': len(facilities),
+        'data': [FacilityResponse().dump(facility) for facility in facilities]
+    }), status=200)

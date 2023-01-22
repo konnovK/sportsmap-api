@@ -42,5 +42,5 @@ ROUTES = [
     web.get('/facility/{id}', get_facility_by_id),
     web.get('/facility', get_all_facilities),
 
-    web.get('/facility/search', search_facilities),
+    web.post('/facility/search', search_facilities),
 ]
