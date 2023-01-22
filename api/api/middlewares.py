@@ -1,6 +1,7 @@
 import marshmallow
 from aiohttp import web
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.schemas.error import ErrorResponse
 
@@ -9,25 +10,39 @@ from api.schemas.error import ErrorResponse
 async def error_middleware(request: web.Request, handler):
     try:
         return await handler(request)
-    except web.HTTPUnauthorized as err:
+    except web.HTTPError as err:
         logger.debug(err)
-        raise err
-    except web.HTTPBadRequest as err:
-        # Исключения которые представляют из себя HTTP ответ, были брошены
-        # осознанно для отображения клиенту.
-        logger.debug(err)
-        raise web.HTTPBadRequest(body=ErrorResponse().load({
+        status_code = err.status_code
+        return web.json_response(ErrorResponse().load({
             'message': err.text,
             'detail': {}
-        }))
-        # raise web.HTTPBadRequest(body={'error': err.text}, content_type='application/json')
+        }), status=status_code)
     except marshmallow.exceptions.ValidationError as err:
         logger.debug(f'validation error: {err}')
-        raise web.HTTPBadRequest(body=ErrorResponse().load({
+        status_code = 400
+        return web.json_response(ErrorResponse().load({
             'message': 'validation error',
             'detail': err.messages
-        }))
+        }), status=status_code)
     except Exception as e:
-        # Исключения, которые бросили не мы
         logger.exception(e)
-        raise e
+        status_code = 500
+        return web.json_response(ErrorResponse().load({
+            'message': 'internal server error',
+            'detail': {}
+        }), status=status_code)
+
+
+@web.middleware
+async def transaction_middleware(request: web.Request, handler):
+    async with request.app['sessionmaker']() as session:
+        session: AsyncSession
+        await session.begin()
+        try:
+            request.app['session'] = session
+            resp = await handler(request)
+            await session.commit()
+            return resp
+        except Exception:
+            await session.rollback()
+            raise
