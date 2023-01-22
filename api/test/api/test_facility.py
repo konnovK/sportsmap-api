@@ -396,3 +396,75 @@ async def test_facility_get_all(cli: ClientSession):
     assert resp_json.get('count') == 1
     for k in facility1:
         assert k in resp_json.get('data')[0]
+
+
+async def test_facility_search(cli: ClientSession):
+    # Успешное создание пользователя
+    create_user_data = {
+        'email': 'user@example.com',
+        'password': 'hackme'
+    }
+    resp = await cli.post('/admin/users', data=create_user_data)
+    assert resp.status == 201
+
+    # Успешная аутентификация
+    resp = await cli.post('/admin/login', data=create_user_data)
+    assert resp.status == 200
+    resp_data = await resp.json()
+    assert resp_data.get('access_token')
+    assert resp_data.get('refresh_token')
+
+    access_token = resp_data.get('access_token')
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    # Успешное создание объекта
+    facility1 = {
+        'name': 'gym next door 1',
+        'x': 123,
+        'y': 456,
+        'type': 'Gym',
+        'owner_name': 'OOO Gachimuchi Corp.',
+        'property_form': 'Private',
+        'length': 128,
+        'width': 32,
+        'area': 128 * 32,
+        'actual_workload': 123,
+        'annual_capacity': 456,
+        'notes': 'Для настоящих пацанов',
+        'height': 43,
+        'size': 12345,
+        'depth': 12,
+        'converting_type': 'RubberBitumen',
+        'is_accessible_for_disabled': True,
+        'paying_type': 'PartlyFree',
+        'who_can_use': 'Настоящие пацаны',
+        'link': 'https://sportsmap.spb.ru',
+        'phone_number': '88005553535',
+        'open_hours': 'Круглосуточно',
+        'eps': 12345,
+        'hidden': False,
+    }
+    resp = await cli.post('/facility', data=facility1, headers=headers)
+    assert resp.status == 201
+    created_facility_id = (await resp.json()).get('id')
+    assert created_facility_id is not None
+
+    # Успешный поиск
+    resp = await cli.post('/facility/search', data={
+        "offset": 0,
+        "limit": 10,
+        "order_by": "name",
+        "filters": [
+            {
+                "eq": "OOO Gachimuchi Corp.",
+                "field": "owner_name"
+            }
+        ]
+    }, headers=headers)
+    assert resp.status == 200
+    resp_json = await resp.json()
+    assert resp_json.get('count') == 1
+    for k in facility1:
+        assert k in resp_json.get('data')[0]

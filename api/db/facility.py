@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import enum
 import uuid
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
 from .schema import Base
@@ -102,3 +105,71 @@ class Facility(Base):
         self.open_hours = kwargs.get('open_hours')
         self.eps = kwargs.get('eps')
         self.hidden = kwargs.get('hidden')
+
+    def __repr__(self):
+        return f'Facility(name={self.name} id={self.id} ({self.x};{self.y}))'
+
+    def __str__(self):
+        return f'Facility(name={self.name} id={self.id})'
+
+    @staticmethod
+    async def search(
+            session: AsyncSession,
+            q: str | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            order_by: str | None = None,
+            order_desc: bool | None = None,
+            filters: list[dict] | None = None
+    ):
+        stmt = sa.select(Facility)
+
+        conditions = []
+        for f in filters:
+            cc = []
+            field = f['field']
+            eq = f.get('eq')
+            lt = f.get('lt')
+            gt = f.get('gt')
+            if eq:
+                cc.append(getattr(Facility, field) == eq)
+            if lt:
+                cc.append(getattr(Facility, field) <= lt)
+            if gt:
+                cc.append(getattr(Facility, field) >= gt)
+            conditions.append(sa.and_(*cc))
+        stmt = stmt.where(sa.or_(*conditions))
+        # for c in conditions:
+        #     stmt = stmt.where(c)
+
+        if order_by:
+            if order_desc:
+                stmt = stmt.order_by(sa.desc(order_by))
+            else:
+                stmt = stmt.order_by(order_by)
+
+        if limit:
+            stmt = stmt.limit(limit)
+        if offset:
+            stmt = stmt.offset(offset)
+
+        facilities = (await session.execute(stmt)).scalars().all()
+
+        return facilities
+
+    @staticmethod
+    async def get_by_id(session: AsyncSession, id: str) -> Facility | None:
+        facility = (
+            await session.execute(
+                sa.select(Facility)
+                .where(Facility.id == id)
+            )
+        ).scalars().first()
+        return facility
+
+    @staticmethod
+    async def get_all(session: AsyncSession) -> list[Facility]:
+        facilities = (
+            await session.execute(sa.select(Facility))
+        ).scalars().all()
+        return facilities

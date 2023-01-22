@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import uuid
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import func
 
 from .schema import Base
@@ -34,3 +37,24 @@ class User(Base):
     @staticmethod
     def hash_password(password: str):
         return hash_password(password)
+
+    @staticmethod
+    async def get_by_email_and_password(session: AsyncSession, email: str, password: str) -> User | None:
+        user = (
+            await session.execute(
+                sa.select(User)
+                .where(User.email == email)
+                .where(User.password_hash == User.hash_password(password))
+            )
+        ).scalars().first()
+        return user
+
+    @staticmethod
+    async def get_by_email(session: AsyncSession, email: str) -> User | None:
+        user = (
+            await session.execute(
+                sa.select(User)
+                .where(User.email == email)
+            )
+        ).scalars().first()
+        return user

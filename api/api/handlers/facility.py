@@ -1,16 +1,19 @@
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    request_schema,
+    request_schema
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, DBAPIError
-import sqlalchemy as sa
 
+from db import Facility
 from api.jwt import jwt_middleware
 from api.schemas.error import ErrorResponse
-from api.schemas.facility import FacilityRequest, FacilityResponse, FacilityResponseList
-from db import Facility
+from api.schemas.facility import (
+    FacilityRequest,
+    FacilityResponse,
+    FacilityResponseList,
+    SearchQuery
+)
 
 
 @docs(
@@ -39,15 +42,16 @@ async def create_facility(request: web.Request) -> web.Response:
 
     facility = Facility(**data)
 
-    async with request.app['session']() as session:
-        try:
-            async with session.begin():
-                session: AsyncSession
-                session.add(facility)
-        except IntegrityError:
-            return web.json_response(status=409)
-        except DBAPIError:
-            raise web.HTTPBadRequest(text='bad enum value')
+    session = request.app['session']
+
+    try:
+        session.add(facility)
+        await session.flush()
+    except IntegrityError:
+        raise web.HTTPConflict()
+    except DBAPIError:
+        raise web.HTTPBadRequest(text='bad enum value')
+
     return web.json_response(FacilityResponse().dump(facility), status=201)
 
 
@@ -80,17 +84,15 @@ async def update_facility(request: web.Request) -> web.Response:
         if data.get(k) is not None:
             facility_updated_fields[k] = data.get(k)
 
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            facility = (
-                await session.execute(
-                    sa.select(Facility)
-                    .where(Facility.id == request.match_info['id'])
-                )
-            ).scalars().first()
-            for k in facility_updated_fields:
-                setattr(facility, k, facility_updated_fields[k])
+    session = request.app['session']
+
+    facility = await Facility.get_by_id(session, request.match_info['id'])
+
+    for k in facility_updated_fields:
+        setattr(facility, k, facility_updated_fields[k])
+
+    await session.flush()
+
     return web.json_response(FacilityResponse().dump(facility), status=200)
 
 
@@ -114,16 +116,10 @@ async def update_facility(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def delete_facility(request: web.Request) -> web.Response:
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            facility = (
-                await session.execute(
-                    sa.select(Facility)
-                    .where(Facility.id == request.match_info['id'])
-                )
-            ).scalars().first()
-            await session.delete(facility)
+    session = request.app['session']
+
+    facility = await Facility.get_by_id(session, request.match_info['id'])
+    await session.delete(facility)
 
     return web.json_response(status=204)
 
@@ -149,22 +145,15 @@ async def delete_facility(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def get_facility_by_id(request: web.Request) -> web.Response:
-    async with request.app['session']() as session:
-        try:
-            async with session.begin():
-                session: AsyncSession
-                facility = (
-                    await session.execute(
-                        sa.select(Facility)
-                        .where(Facility.id == request.match_info['id'])
-                    )
-                ).scalars().first()
-                if not facility:
-                    raise web.HTTPBadRequest(text="facility with this id doesn't exists")
-        except IntegrityError:
+    session = request.app['session']
+    try:
+        facility = await Facility.get_by_id(session, request.match_info['id'])
+        if not facility:
             raise web.HTTPBadRequest(text="facility with this id doesn't exists")
-        except DBAPIError:
-            raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+    except IntegrityError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+    except DBAPIError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
     return web.json_response(FacilityResponse().dump(facility), status=200)
 
 
@@ -189,12 +178,58 @@ async def get_facility_by_id(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def get_all_facilities(request: web.Request) -> web.Response:
-    async with request.app['session']() as session:
-        async with session.begin():
-            session: AsyncSession
-            facilities = (
-                await session.execute(sa.select(Facility))
-            ).scalars().all()
+    session = request.app['session']
+
+    facilities = await Facility.get_all(session)
+
+    return web.json_response(FacilityResponseList().dump({
+        'count': len(facilities),
+        'data': [FacilityResponse().dump(facility) for facility in facilities]
+    }), status=200)
+
+
+@docs(
+    tags=["Facilities"],
+    summary="Поиск спортивных объектов",
+    description="Типа очень умный поиск спортивных объектов, с фильтрами и прочей шнягой",
+    responses={
+        200: {
+            "schema": FacilityResponseList,
+            "description": "Полученные объекты"
+        },
+        400: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
+        },
+        401: {
+            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
+                           "Authorization: Bearer 'текст токена') "
+        },
+    },
+)
+@request_schema(SearchQuery)
+@jwt_middleware
+async def search_facilities(request: web.Request) -> web.Response:
+    data = SearchQuery().load(await request.json())
+
+    session = request.app['session']
+
+    q = data.get('q')
+    limit = data.get('limit')
+    offset = data.get('offset')
+    order_by = data.get('order_by')
+    order_desc = data.get('order_desc')
+    filters = data.get('filters')
+
+    facilities = await Facility.search(
+        session,
+        q=q,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        order_desc=order_desc,
+        filters=filters
+    )
 
     return web.json_response(FacilityResponseList().dump({
         'count': len(facilities),

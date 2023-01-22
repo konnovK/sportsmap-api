@@ -29,7 +29,7 @@ class FacilityRequest(Schema):
 
 
 class FacilityResponse(Schema):
-    id = fields.Str(required=True, nullable=False)
+    id = fields.UUID(required=True, nullable=False)
     name = fields.Str(required=True, nullable=False)  # имя объекта
     x = fields.Float(required=True, nullable=False)  # КООРДИНАТА X
     y = fields.Field(required=True, nullable=False)  # КООРДИНАТА Y
@@ -59,3 +59,20 @@ class FacilityResponse(Schema):
 class FacilityResponseList(Schema):
     count = fields.Int(required=True, nullable=False)
     data = fields.List(fields.Nested(FacilityResponse()), required=True, nullable=False)
+
+
+class FieldFilter(Schema):
+    field = fields.Str()
+    eq = fields.Str()
+    lt = fields.Number()
+    gt = fields.Number()
+
+
+class SearchQuery(Schema):
+    q = fields.Str()
+    limit = fields.Int()
+    offset = fields.Int()
+    order_by = fields.Str()
+    order_desc = fields.Bool()
+
+    filters = fields.List(fields.Nested(FieldFilter()))
