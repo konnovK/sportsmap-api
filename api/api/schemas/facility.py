@@ -1,25 +1,27 @@
 from marshmallow import Schema, fields
 
+from db.facility import FacilityTypes, FacilityPayingTypes, FacilityCoveringTypes, FacilityPropertyForms
+
 
 class FacilityRequest(Schema):
     name = fields.Str(required=True, nullable=False)  # имя объекта
     x = fields.Float(required=True, nullable=False)  # КООРДИНАТА X
-    y = fields.Field(required=True, nullable=False)  # КООРДИНАТА Y
-    type = fields.Str()  # тип объекта
+    y = fields.Float(required=True, nullable=False)  # КООРДИНАТА Y
+    type = fields.Enum(FacilityTypes)  # тип объекта
     owner_name = fields.Str()  # ФИО владельца
-    property_form = fields.Str()  # форма собственности
-    length = fields.Field()  # длина
-    width = fields.Field()  # ширина
-    area = fields.Field()  # площадь
+    property_form = fields.Enum(FacilityPropertyForms)  # форма собственности
+    length = fields.Float()  # длина
+    width = fields.Float()  # ширина
+    area = fields.Float()  # площадь
     actual_workload = fields.Int()  # фактическая загруженность
     annual_capacity = fields.Int()  # годовая мощность
     notes = fields.Str()  # примечания
-    height = fields.Field()  # высота
-    size = fields.Field()  # размер
-    depth = fields.Field()  # глубина
-    converting_type = fields.Str()  # типы покрытия
+    height = fields.Float()  # высота
+    size = fields.Float()  # размер
+    depth = fields.Float()  # глубина
+    converting_type = fields.Enum(FacilityCoveringTypes)  # типы покрытия
     is_accessible_for_disabled = fields.Bool()  # доступность для инвалидов
-    paying_type = fields.Str(required=True, nullable=False)  # платные услуги
+    paying_type = fields.Enum(FacilityPayingTypes)  # платные услуги
     who_can_use = fields.Str()  # пользователь
     link = fields.Str()  # ссылка на сайт
     phone_number = fields.Str()  # номер телефона
@@ -32,22 +34,22 @@ class FacilityResponse(Schema):
     id = fields.UUID(required=True, nullable=False)
     name = fields.Str(required=True, nullable=False)  # имя объекта
     x = fields.Float(required=True, nullable=False)  # КООРДИНАТА X
-    y = fields.Field(required=True, nullable=False)  # КООРДИНАТА Y
+    y = fields.Float(required=True, nullable=False)  # КООРДИНАТА Y
     type = fields.Str()  # тип объекта
     owner_name = fields.Str()  # ФИО владельца
     property_form = fields.Str()  # форма собственности
-    length = fields.Field()  # длина
-    width = fields.Field()  # ширина
-    area = fields.Field()  # площадь
+    length = fields.Float()  # длина
+    width = fields.Float()  # ширина
+    area = fields.Float()  # площадь
     actual_workload = fields.Int()  # фактическая загруженность
     annual_capacity = fields.Int()  # годовая мощность
     notes = fields.Str()  # примечания
-    height = fields.Field()  # высота
-    size = fields.Field()  # размер
-    depth = fields.Field()  # глубина
+    height = fields.Float()  # высота
+    size = fields.Float()  # размер
+    depth = fields.Float()  # глубина
     converting_type = fields.Str()  # типы покрытия
     is_accessible_for_disabled = fields.Bool()  # доступность для инвалидов
-    paying_type = fields.Str(required=True, nullable=False)  # платные услуги
+    paying_type = fields.Str()  # платные услуги
     who_can_use = fields.Str()  # пользователь
     link = fields.Str()  # ссылка на сайт
     phone_number = fields.Str()  # номер телефона

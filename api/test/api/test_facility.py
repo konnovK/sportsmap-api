@@ -82,7 +82,7 @@ async def test_facility_create(cli: ClientSession):
     }
     resp = await cli.post('/facility', data=facility3, headers=headers)
     assert resp.status == 400
-    assert (await resp.json()).get('message') == 'bad enum value'
+    assert (await resp.json()).get('message') == 'validation error'
 
     # Неудачное создание объекта (без полей x, y)
     facility2 = {
