@@ -19,7 +19,7 @@ async def error_middleware(request: web.Request, handler):
         }), status=status_code)
     except marshmallow.exceptions.ValidationError as err:
         logger.debug(f'validation error: {err}')
-        status_code = 400
+        status_code = 422
         return web.json_response(ErrorResponse().load({
             'message': 'validation error',
             'detail': err.messages

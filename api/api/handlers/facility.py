@@ -25,13 +25,16 @@ from api.schemas.facility import (
             "schema": FacilityResponse,
             "description": "Спортивный объект успешно создан"
         },
-        400: {
-            "schema": ErrorResponse,
-            "description": "Ошибка валидации входных данных"
-        },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
                            "Authorization: Bearer 'текст токена') "
+        },
+        409: {
+            "description": "facility уже существует"
+        },
+        422: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
         },
     },
 )
@@ -49,8 +52,6 @@ async def create_facility(request: web.Request) -> web.Response:
         await session.flush()
     except IntegrityError:
         raise web.HTTPConflict()
-    except DBAPIError:
-        raise web.HTTPBadRequest(text='bad enum value')
 
     return web.json_response(FacilityResponse().dump(facility), status=201)
 
@@ -65,12 +66,15 @@ async def create_facility(request: web.Request) -> web.Response:
             "description": "Спортивный объект успешно обновлен"
         },
         400: {
-            "schema": ErrorResponse,
-            "description": "Ошибка валидации входных данных"
+            "description": "Передан id объекта, которого не существует"
         },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
                            "Authorization: Bearer 'текст токена') "
+        },
+        422: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
         },
     },
 )
@@ -105,8 +109,7 @@ async def update_facility(request: web.Request) -> web.Response:
             "description": "Спортивный объект успешно удален"
         },
         400: {
-            "schema": ErrorResponse,
-            "description": "Ошибка валидации входных данных"
+            "description": "Передан id объекта, которого не существует"
         },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
@@ -135,7 +138,7 @@ async def delete_facility(request: web.Request) -> web.Response:
         },
         400: {
             "schema": ErrorResponse,
-            "description": "Ошибка валидации входных данных"
+            "description": "передан id объекта, которого не существует"
         },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
@@ -166,10 +169,6 @@ async def get_facility_by_id(request: web.Request) -> web.Response:
             "schema": FacilityResponseList,
             "description": "Полученные объекты"
         },
-        400: {
-            "schema": ErrorResponse,
-            "description": "Ошибка валидации входных данных"
-        },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
                            "Authorization: Bearer 'текст токена') "
@@ -197,13 +196,13 @@ async def get_all_facilities(request: web.Request) -> web.Response:
             "schema": FacilityResponseList,
             "description": "Полученные объекты"
         },
-        400: {
-            "schema": ErrorResponse,
-            "description": "Ошибка валидации входных данных"
-        },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
                            "Authorization: Bearer 'текст токена') "
+        },
+        422: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
         },
     },
 )
