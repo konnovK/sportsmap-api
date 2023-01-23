@@ -1,149 +1,199 @@
+import pytest
 from aiohttp.test_utils import ClientSession
+from test import utils
 
 
-async def test_user_create(cli: ClientSession):
-    create_user_data = {
+@pytest.mark.parametrize('request_data', [
+    {
+        'email': 'user@example.com',
+        'password': 'hackme',
+        'first_name': 'kirill',
+        'last_name': 'konnov'
+    },
+    {
+        'email': 'user@example.com',
+        'password': 'hackme',
+    }
+])
+async def test_user_create_success(cli: ClientSession, request_data):
+    resp = await cli.post('/admin/users', data=request_data)
+    await utils.check_ok(resp, 201, ['id', 'email'])
+
+
+@pytest.mark.parametrize('request_data', [
+    {
+        'email': 'bad email',
+        'password': 'hackme',
+        'first_name': 'kirill',
+        'last_name': 'konnov'
+    },
+    {
+        'email': 'user@example.com',
+        'password': 'hackme',
+        'INVALID': 'INVALID'
+    },
+    {
+        'email': 'user@example.com',
+    },
+])
+async def test_user_create_bad_validation(cli: ClientSession, request_data):
+    resp = await cli.post('/admin/users', data=request_data)
+    await utils.check_validation_error(resp)
+
+
+@pytest.mark.parametrize('request_data', [
+    {
         'email': 'user@example.com',
         'password': 'hackme',
         'first_name': 'kirill',
         'last_name': 'konnov'
     }
-
-    # Успешное создание пользователя
-    resp = await cli.post('/admin/users', data=create_user_data)
-    assert resp.status == 201
-
-    # Попытка создать уже существуюшего пользователя
-    resp = await cli.post('/admin/users', data=create_user_data)
-    assert resp.status == 409
-
-    # Отправка данных в некорректной форме
-    resp = await cli.post('/admin/users', data={
-        'invalid': 'invalid'
-    })
-    assert resp.status == 400
-    resp_data = await resp.json()
-    # В ответе 400 есть поля message и detail
-    assert resp_data.get('message') == 'validation error'
-    assert resp_data.get('detail')
+])
+async def test_user_create_already_exists(cli: ClientSession, request_data):
+    resp = await cli.post('/admin/users', data=request_data)
+    await utils.check_ok(resp, 201, ['id', 'email'])
+    resp = await cli.post('/admin/users', data=request_data)
+    await utils.check_error(resp, 409, 'user already exists')
 
 
-async def test_user_login(cli: ClientSession):
-    # Успешное создание пользователя
-    create_user_data = {
+@pytest.mark.parametrize('request_data', [
+    {
         'email': 'user@example.com',
-        'password': 'hackme'
+        'password': 'hackme',
     }
-    resp = await cli.post('/admin/users', data=create_user_data)
-    assert resp.status == 201
-
-    # Аутентификация несуществующего пользователя
-    resp = await cli.post('/admin/login', data={
-        'email': 'invalid@example.com',
-        'password': 'hackme'
-    })
-    assert resp.status == 400
-    assert (await resp.json()).get('message') == 'wrong email or password'
-
-    # Аутентификация c неправильным паролем
-    resp = await cli.post('/admin/login', data={
-        'email': 'user@example.com',
-        'password': 'hackme23'
-    })
-    assert resp.status == 400
-    assert (await resp.json()).get('message') == 'wrong email or password'
-
-    # Успешная аутентификация
-    resp = await cli.post('/admin/login', data={
+])
+async def test_user_login_success(cli: ClientSession, request_data):
+    # Создание пользователя
+    await cli.post('/admin/users', data={
         'email': 'user@example.com',
         'password': 'hackme'
     })
-    assert resp.status == 200
-    resp_data = await resp.json()
-    assert resp_data.get('access_token')
-    assert resp_data.get('refresh_token')
+    # Аутентификация
+    resp = await cli.post('/admin/login', data=request_data)
+    await utils.check_ok(resp, 200, ['access_token_expires_in', 'access_token', 'refresh_token'])
 
 
-async def test_user_refresh(cli: ClientSession):
-    # Успешное создание пользователя
-    create_user_data = {
+@pytest.mark.parametrize('request_data', [
+    {
+        'email': 'INVALID',
+        'password': 'hackme',
+    },
+    {
+        'email': 'INVALID',
+    },
+    {
+        'email': 'user@example.com',
+        'password': 'hackme',
+        'INVALID': 'INVALID'
+    },
+])
+async def test_user_login_bad_validation(cli: ClientSession, request_data):
+    # Аутентификация
+    resp = await cli.post('/admin/login', data=request_data)
+    await utils.check_validation_error(resp)
+
+
+@pytest.mark.parametrize('request_data', [
+    {
+        'email': 'user@example.com',
+        'password': 'wrong password',
+    },
+    {
+        'email': 'wrong@example.com',
+        'password': 'hackme',
+    },
+])
+async def test_user_login_bad_user_data(cli: ClientSession, request_data):
+    # Аутентификация
+    resp = await cli.post('/admin/login', data=request_data)
+    await utils.check_error(resp, 400, 'wrong email or password')
+
+
+async def test_user_refresh_success(cli: ClientSession):
+    # Создание пользователя
+    await cli.post('/admin/users', data={
         'email': 'user@example.com',
         'password': 'hackme'
-    }
-    resp = await cli.post('/admin/users', data=create_user_data)
-    assert resp.status == 201
-
-    # Успешная аутентификация
-    resp = await cli.post('/admin/login', data=create_user_data)
-    assert resp.status == 200
-    resp_data = await resp.json()
-    assert resp_data.get('access_token')
-    assert resp_data.get('refresh_token')
-    assert resp_data.get('access_token_expires_in')
-
-    access_token = resp_data.get('access_token')
-    refresh_token = resp_data.get('refresh_token')
-
-    # Неудачное обновление токена (плохой access_token)
-    resp = await cli.post('/admin/token/refresh', data={
-        'access_token': access_token + 'invalid',
-        'refresh_token': refresh_token
     })
-    assert resp.status == 400
-    assert (await resp.json()).get('message') == 'wrong access token'
+    # Аутентификация
+    access_token, refresh_token = await utils.get_token(cli, 'user@example.com', 'hackme')
 
-    # Неудачное обновление токена (плохой refresh_token)
-    resp = await cli.post('/admin/token/refresh', data={
-        'access_token': access_token,
-        'refresh_token': refresh_token + 'invalid'
-    })
-    assert resp.status == 400
-    assert (await resp.json()).get('message') == 'wrong refresh token'
-
-    # Успешное обновление токена
+    # Обновление токена
     resp = await cli.post('/admin/token/refresh', data={
         'access_token': access_token,
         'refresh_token': refresh_token
     })
-    assert resp.status == 200
-    assert resp_data.get('access_token')
-    assert resp_data.get('refresh_token')
-    assert resp_data.get('access_token_expires_in')
+    await utils.check_ok(resp, 200, ['access_token_expires_in', 'access_token', 'refresh_token'])
 
 
-async def test_user_delete(cli: ClientSession):
-    # Успешное создание пользователя
-    create_user_data = {
+async def test_user_refresh_bad_access_token(cli: ClientSession):
+    # Создание пользователя
+    await cli.post('/admin/users', data={
         'email': 'user@example.com',
         'password': 'hackme'
-    }
-    resp = await cli.post('/admin/users', data=create_user_data)
-    assert resp.status == 201
+    })
+    # Аутентификация
+    access_token, refresh_token = await utils.get_token(cli, 'user@example.com', 'hackme')
 
-    # Успешная аутентификация
-    resp = await cli.post('/admin/login', data=create_user_data)
-    assert resp.status == 200
-    resp_data = await resp.json()
-    assert resp_data.get('access_token')
-    assert resp_data.get('refresh_token')
+    # Обновление токена
+    resp = await cli.post('/admin/token/refresh', data={
+        'access_token': f'wrong{access_token}',
+        'refresh_token': refresh_token
+    })
+    await utils.check_error(resp, 400, 'wrong access token')
 
-    access_token = resp_data.get('access_token')
-    headers = {
-        'Authorization': f'Bearer {access_token}'
-    }
 
-    # Неудальное удаление пользователя (без аутентификации)
-    resp = await cli.delete('/admin/users')
-    assert resp.status == 401
+async def test_user_refresh_bad_refresh_token(cli: ClientSession):
+    # Создание пользователя
+    await cli.post('/admin/users', data={
+        'email': 'user@example.com',
+        'password': 'hackme'
+    })
+    # Аутентификация
+    access_token, refresh_token = await utils.get_token(cli, 'user@example.com', 'hackme')
 
-    # Успешное удаление пользователя
+    # Обновление токена
+    resp = await cli.post('/admin/token/refresh', data={
+        'access_token': access_token,
+        'refresh_token': f'wrong{refresh_token}'
+    })
+    await utils.check_error(resp, 400, 'wrong refresh token')
+
+
+async def test_user_delete_success(cli: ClientSession):
+    # Создание пользователя
+    await cli.post('/admin/users', data={
+        'email': 'user@example.com',
+        'password': 'hackme'
+    })
+    # Аутентификация
+    headers = await utils.auth(cli, 'user@example.com', 'hackme')
+    # Удаление пользователя
     resp = await cli.delete('/admin/users', headers=headers)
     assert resp.status == 204
-
     # проверим, что пользователь действительно удалился
-    resp = await cli.post('/admin/login', data=create_user_data)
-    assert resp.status == 400
-    assert (await resp.json())['message'] == 'wrong email or password'
+    resp = await cli.post('/admin/login', data={
+        'email': 'user@example.com',
+        'password': 'hackme'
+    })
+    await utils.check_error(resp, 400, 'wrong email or password')
+
+
+@pytest.mark.parametrize('request_headers', [
+    {},
+    {
+        'Authorization': 'INVALID'
+    }
+])
+async def test_user_delete_bad_auth(cli: ClientSession, request_headers):
+    # Создание пользователя
+    await cli.post('/admin/users', data={
+        'email': 'user@example.com',
+        'password': 'hackme'
+    })
+    # Удаление пользователя
+    resp = await cli.delete('/admin/users', headers=request_headers)
+    assert resp.status == 401
 
 
 async def test_user_update(cli: ClientSession):
@@ -180,7 +230,7 @@ async def test_user_update(cli: ClientSession):
         },
         headers=headers
     )
-    assert resp.status == 400
+    assert resp.status == 422
     assert (await resp.json()).get('message') == 'validation error'
 
     # Неправильное изменение пользователя (без токена аутентификации)
@@ -205,7 +255,10 @@ async def test_user_update(cli: ClientSession):
     assert resp.status == 200
 
     # Проверим, что пароль действительно изменился
-    resp = await cli.post('/admin/login', data=create_user_data)
+    resp = await cli.post('/admin/login', data={
+        'email': create_user_data['email'],
+        'password': create_user_data['password']
+    })
     assert resp.status == 400
     resp = await cli.post('/admin/login', data={
         'email': create_user_data['email'],

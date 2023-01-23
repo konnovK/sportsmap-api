@@ -27,13 +27,13 @@ from api.schemas.user import (
             "schema": UserResponse,
             "description": "Пользователь успешно создан"
         },
-        400: {
+        409: {
+            "description": "Пользователь с таким email уже существует"
+        },
+        422: {
             "schema": ErrorResponse,
             "description": "Ошибка валидации входных данных"
         },
-        409: {
-            "description": "Пользователь с таким email уже существует"
-        }
     },
 )
 @request_schema(CreateUserRequest)
@@ -46,7 +46,7 @@ async def register(request: web.Request) -> web.Response:
         session.add(user)
         await session.flush()
     except IntegrityError:
-        raise web.HTTPConflict()
+        raise web.HTTPConflict(text='user already exists')
 
     return web.json_response(UserResponse().dump(user), status=201)
 
@@ -62,8 +62,12 @@ async def register(request: web.Request) -> web.Response:
         },
         400: {
             "schema": ErrorResponse,
-            "description": "Ошибка валидации, Неверный email или пароль"
-        }
+            "description": "Неверный email или пароль"
+        },
+        422: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
+        },
     },
 )
 @request_schema(LoginRequest)
@@ -100,7 +104,11 @@ async def login(request: web.Request) -> web.Response:
         400: {
             "schema": ErrorResponse,
             "description": "Невалидный токен"
-        }
+        },
+        422: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
+        },
     },
 )
 @request_schema(RefreshTokenRequest)
@@ -146,13 +154,13 @@ async def refresh_token(request: web.Request) -> web.Response:
         204: {
             "description": "Успешное удаление"
         },
-        400: {
-            "schema": ErrorResponse,
-            "description": "Ошибка входных данных (незнаю, каких именно, например, если прислали неправильный токен)"
-        },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
                            "Authorization: Bearer 'текст токена') "
+        },
+        422: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
         },
     },
 )
@@ -177,13 +185,13 @@ async def delete_self(request: web.Request) -> web.Response:
             "schema": UserResponse,
             "description": "Пользователь успешно обновлен"
         },
-        400: {
-            "schema": ErrorResponse,
-            "description": "Ошибка входных данных"
-        },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
                            "Authorization: Bearer 'текст токена') "
+        },
+        422: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
         },
     },
 )
