@@ -41,7 +41,7 @@ async def register(request: web.Request) -> web.Response:
     data = CreateUserRequest().load(await request.json())
     user = User(**data)
 
-    session = request.app['session']
+    session = request['session']
     try:
         session.add(user)
         await session.flush()
@@ -76,7 +76,7 @@ async def login(request: web.Request) -> web.Response:
     user_email = data.get('email')
     user_password = data.get('password')
 
-    session = request.app['session']
+    session = request['session']
 
     existed_user = await User.get_by_email_and_password(session, user_email, user_password)
     if existed_user is None:
@@ -117,7 +117,7 @@ async def refresh_token(request: web.Request) -> web.Response:
     access_token = data.get('access_token')
     refresh_token = data.get('refresh_token')
 
-    session = request.app['session']
+    session = request['session']
 
     try:
         user_email = request.app['jwt'].get_email_from_access_token(access_token)
@@ -166,9 +166,9 @@ async def refresh_token(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def delete_self(request: web.Request) -> web.Response:
-    user_email = request.app['email']
+    user_email = request['email']
 
-    session = request.app['session']
+    session = request['session']
 
     user = await User.get_by_email(session, user_email)
     await session.delete(user)
@@ -198,10 +198,10 @@ async def delete_self(request: web.Request) -> web.Response:
 @request_schema(UpdateSelfRequest)
 @jwt_middleware
 async def update_self(request: web.Request) -> web.Response:
-    user_email = request.app['email']
+    user_email = request['email']
     data = UpdateSelfRequest().load(await request.json())
 
-    session = request.app['session']
+    session = request['session']
 
     user = await User.get_by_email(session, user_email)
     if user is None:

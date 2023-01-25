@@ -139,7 +139,7 @@ def jwt_middleware(handler):
         except JWTException:
             raise web.HTTPUnauthorized()
 
-        request.app['email'] = user_email
+        request['email'] = user_email
         response = await handler(request)
         return response
     return wrapper

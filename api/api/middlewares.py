@@ -39,7 +39,7 @@ async def transaction_middleware(request: web.Request, handler):
         session: AsyncSession
         await session.begin()
         try:
-            request.app['session'] = session
+            request['session'] = session
             resp = await handler(request)
             await session.commit()
             return resp

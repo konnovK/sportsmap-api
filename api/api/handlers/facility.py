@@ -45,7 +45,7 @@ async def create_facility(request: web.Request) -> web.Response:
 
     facility = Facility(**data)
 
-    session = request.app['session']
+    session = request['session']
 
     try:
         session.add(facility)
@@ -88,7 +88,7 @@ async def update_facility(request: web.Request) -> web.Response:
         if data.get(k) is not None:
             facility_updated_fields[k] = data.get(k)
 
-    session = request.app['session']
+    session = request['session']
 
     facility = await Facility.get_by_id(session, request.match_info['id'])
 
@@ -119,7 +119,7 @@ async def update_facility(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def delete_facility(request: web.Request) -> web.Response:
-    session = request.app['session']
+    session = request['session']
 
     facility = await Facility.get_by_id(session, request.match_info['id'])
     await session.delete(facility)
@@ -148,7 +148,7 @@ async def delete_facility(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def get_facility_by_id(request: web.Request) -> web.Response:
-    session = request.app['session']
+    session = request['session']
     try:
         facility = await Facility.get_by_id(session, request.match_info['id'])
         if not facility:
@@ -177,7 +177,7 @@ async def get_facility_by_id(request: web.Request) -> web.Response:
 )
 @jwt_middleware
 async def get_all_facilities(request: web.Request) -> web.Response:
-    session = request.app['session']
+    session = request['session']
 
     facilities = await Facility.get_all(session)
 
@@ -211,7 +211,7 @@ async def get_all_facilities(request: web.Request) -> web.Response:
 async def search_facilities(request: web.Request) -> web.Response:
     data = SearchQuery().load(await request.json())
 
-    session = request.app['session']
+    session = request['session']
 
     q = data.get('q')
     limit = data.get('limit')
