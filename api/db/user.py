@@ -58,3 +58,13 @@ class User(Base):
             )
         ).scalars().first()
         return user
+
+    @staticmethod
+    async def get_by_id(session: AsyncSession, id: str) -> User | None:
+        user = (
+            await session.execute(
+                sa.select(User)
+                .where(User.id == id)
+            )
+        ).scalars().first()
+        return user

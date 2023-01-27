@@ -5,6 +5,7 @@ from .user import (
     update_self,
     delete_self,
     refresh_token,
+    get_user_by_id
     # confirmed_password_reset,
     # send_password_reset_link
 )
@@ -31,6 +32,8 @@ ROUTES = [
     web.post('/admin/users', register),
     web.delete('/admin/users', delete_self),
     web.put('/admin/users', update_self),
+
+    web.get('/admin/users/{id}', get_user_by_id),
 
     # web.post('/api/admin/password/reset/link', send_password_reset_link),
     # web.post('/api/admin/password/reset/confirmed', confirmed_password_reset),

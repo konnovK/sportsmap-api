@@ -268,3 +268,33 @@ async def test_user_update(cli: ClientSession):
     resp_data = await resp.json()
     assert resp_data.get('access_token')
     assert resp_data.get('refresh_token')
+
+
+async def test_user_get_by_id(cli: ClientSession):
+    # создание пользователя
+    create_user_data = {
+        'email': 'user@example.com',
+        'password': 'hackme',
+    }
+    resp = await cli.post('/admin/users', data=create_user_data)
+    resp_data = await resp.json()
+    user_id = resp_data.get('id')
+    # аутентификация
+    resp = await cli.post('/admin/login', data={
+        'email': 'user@example.com',
+        'password': 'hackme',
+    })
+    resp_data = await resp.json()
+    access_token = resp_data.get('access_token')
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    resp = await cli.get(f'/admin/users/{user_id}')
+    await utils.check_error(resp, 401, 'authorization error')
+
+    resp = await cli.get('/admin/users/INVALID', headers=headers)
+    await utils.check_error(resp, 400, "user with this id doesn't exists")
+
+    resp = await cli.get(f'/admin/users/{user_id}', headers=headers)
+    await utils.check_ok(resp, 200, ['id', 'email', 'first_name', 'last_name'])

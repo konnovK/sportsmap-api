@@ -3,7 +3,7 @@ from aiohttp_apispec import (
     docs,
     request_schema,
 )
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DBAPIError
 
 from db import User
 from api.jwt import jwt_middleware, JWTException  # , JWTException
@@ -215,3 +215,36 @@ async def update_self(request: web.Request) -> web.Response:
     await session.flush()
 
     return web.json_response(UserResponse().dump(user))
+
+
+@docs(
+    tags=["Admin"],
+    summary="Получение пользователя по его id",
+    description="Получение пользователя по его id. Требуется аутентификация.",
+    responses={
+        200: {
+            "schema": UserResponse,
+            "description": "Пользователь успешно получен"
+        },
+        400: {
+            "schema": ErrorResponse,
+            "description": "передан id пользователя, которого не существует"
+        },
+        401: {
+            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
+                           "Authorization: Bearer 'текст токена') "
+        },
+    },
+)
+@jwt_middleware
+async def get_user_by_id(request: web.Request) -> web.Response:
+    session = request['session']
+    try:
+        user = await User.get_by_id(session, request.match_info['id'])
+        if not user:
+            raise web.HTTPBadRequest(text="user with this id doesn't exists")
+    except IntegrityError:
+        raise web.HTTPBadRequest(text="user with this id doesn't exists")
+    except DBAPIError:
+        raise web.HTTPBadRequest(text="user with this id doesn't exists")
+    return web.json_response(UserResponse().dump(user), status=200)
