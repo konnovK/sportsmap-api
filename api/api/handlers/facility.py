@@ -12,7 +12,7 @@ from api.schemas.facility import (
     FacilityRequest,
     FacilityResponse,
     FacilityResponseList,
-    SearchQuery
+    SearchQuery, FacilityHiddenRequest, FacilityUpdateRequest
 )
 
 
@@ -78,10 +78,10 @@ async def create_facility(request: web.Request) -> web.Response:
         },
     },
 )
-@request_schema(FacilityRequest)
+@request_schema(FacilityUpdateRequest)
 @jwt_middleware
 async def update_facility(request: web.Request) -> web.Response:
-    data = FacilityRequest().load(await request.json())
+    data = FacilityUpdateRequest().load(await request.json())
 
     facility_updated_fields = {}
     for k in data:
@@ -90,10 +90,59 @@ async def update_facility(request: web.Request) -> web.Response:
 
     session = request['session']
 
-    facility = await Facility.get_by_id(session, request.match_info['id'])
+    try:
+        facility = await Facility.get_by_id(session, request.match_info['id'])
+    except IntegrityError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+    except DBAPIError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
 
     for k in facility_updated_fields:
         setattr(facility, k, facility_updated_fields[k])
+
+    await session.flush()
+
+    return web.json_response(FacilityResponse().dump(facility), status=200)
+
+
+@docs(
+    tags=["Facilities"],
+    summary="Спрятать спортивный объект",
+    description="поменять поле hidden у спортивного объекта.",
+    responses={
+        200: {
+            "schema": FacilityResponse,
+            "description": "Спортивный объект успешно обновлен"
+        },
+        400: {
+            "description": "Передан id объекта, которого не существует"
+        },
+        401: {
+            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
+                           "Authorization: Bearer 'текст токена') "
+        },
+        422: {
+            "schema": ErrorResponse,
+            "description": "Ошибка валидации входных данных"
+        },
+    },
+)
+@request_schema(FacilityHiddenRequest)
+@jwt_middleware
+async def hidden_facility(request: web.Request) -> web.Response:
+    data = FacilityHiddenRequest().load(await request.json())
+    facility_hidden = data.get('hidden')
+
+    session = request['session']
+
+    try:
+        facility = await Facility.get_by_id(session, request.match_info['id'])
+    except IntegrityError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+    except DBAPIError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+
+    facility.hidden = facility_hidden
 
     await session.flush()
 

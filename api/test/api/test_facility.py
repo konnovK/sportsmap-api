@@ -167,11 +167,14 @@ async def test_facility_update(cli: ClientSession):
     created_facility_id = (await resp.json()).get('id')
     assert created_facility_id is not None
 
+    resp = await cli.put('/facility/INVALID', data={'x': 65536}, headers=headers)
+    assert resp.status == 400
+
+    resp = await cli.put(f'/facility/{created_facility_id}', data={'x': 65536})
+    assert resp.status == 401
+
     # Успешное обновление объекта
-    resp = await cli.put(f'/facility/{created_facility_id}', data={
-        **facility1,
-        'x': 65536
-    }, headers=headers)
+    resp = await cli.put(f'/facility/{created_facility_id}', data={'x': 65536}, headers=headers)
     assert resp.status == 200
     resp_json = await resp.json()
     updated_facility_id = resp_json.get('id')
@@ -179,6 +182,63 @@ async def test_facility_update(cli: ClientSession):
     assert updated_facility_id == created_facility_id
     assert updated_facility_x != facility1['x']
     assert updated_facility_x == 65536
+
+
+async def test_facility_hide(cli: ClientSession):
+    # создание пользователя
+    create_user_data = {
+        'email': 'user@example.com',
+        'password': 'hackme'
+    }
+    resp = await cli.post('/admin/users', data=create_user_data)
+    # аутентификация
+    resp = await cli.post('/admin/login', data=create_user_data)
+    resp_data = await resp.json()
+    access_token = resp_data.get('access_token')
+    headers = {
+        'Authorization': f'Bearer {access_token}'
+    }
+
+    # создание объекта
+    facility1 = {
+        'name': 'gym next door 1',
+        'x': 123,
+        'y': 456,
+        'type': 'Gym',
+        'owner_name': 'OOO Gachimuchi Corp.',
+        'property_form': 'Private',
+        'length': 128,
+        'width': 32,
+        'area': 128 * 32,
+        'actual_workload': 123,
+        'annual_capacity': 456,
+        'notes': 'Для настоящих пацанов',
+        'height': 43,
+        'size': 12345,
+        'depth': 12,
+        'converting_type': 'RubberBitumen',
+        'is_accessible_for_disabled': True,
+        'paying_type': 'PartlyFree',
+        'who_can_use': 'Настоящие пацаны',
+        'link': 'https://sportsmap.spb.ru',
+        'phone_number': '88005553535',
+        'open_hours': 'Круглосуточно',
+        'eps': 12345,
+        'hidden': False,
+    }
+    resp = await cli.post('/facility', data=facility1, headers=headers)
+    created_facility_id = (await resp.json()).get('id')
+
+    resp = await cli.patch(f'/facility/{created_facility_id}/hide', data={"hidden": True})
+    assert resp.status == 401
+
+    resp = await cli.patch('/facility/INVALID/hide', data={"hidden": True}, headers=headers)
+    assert resp.status == 400
+
+    resp = await cli.patch(f'/facility/{created_facility_id}/hide', data={"hidden": True}, headers=headers)
+    assert resp.status == 200
+    resp_data = await resp.json()
+    assert resp_data.get('hidden')
 
 
 async def test_facility_delete(cli: ClientSession):
