@@ -48,5 +48,5 @@ ROUTES = [
 
     web.post('/facility/search', search_facilities),
 
-    web.patch('/facility/{id}/hide', hidden_facility)
+    web.patch('/facility/{id}', hidden_facility)
 ]
