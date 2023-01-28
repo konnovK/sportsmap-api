@@ -173,3 +173,32 @@ class Facility(Base):
             await session.execute(sa.select(Facility))
         ).scalars().all()
         return facilities
+
+    def dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "x": self.x,
+            "y": self.y,
+            "type": self.type,
+            "owner_name": self.owner_name,
+            "property_form": self.property_form,
+            "length": self.length,
+            "width": self.width,
+            "area": self.area,
+            "actual_workload": self.actual_workload,
+            "annual_capacity": self.annual_capacity,
+            "notes": self.notes,
+            "height": self.height,
+            "size": self.size,
+            "depth": self.depth,
+            "converting_type": self.converting_type,
+            "is_accessible_for_disabled": self.is_accessible_for_disabled,
+            "paying_type": self.paying_type,
+            "who_can_use": self.who_can_use,
+            "link": self.link,
+            "phone_number": self.phone_number,
+            "open_hours": self.open_hours,
+            "eps": self.eps,
+            "hidden": self.hidden,
+        }

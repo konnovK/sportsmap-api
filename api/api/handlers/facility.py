@@ -3,6 +3,7 @@ from aiohttp_apispec import (
     docs,
     request_schema
 )
+from loguru import logger
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
 from db import Facility
@@ -155,6 +156,7 @@ async def hidden_facility(request: web.Request) -> web.Response:
     description="Удаление спортивного объекта.",
     responses={
         204: {
+            "schema": FacilityResponse,
             "description": "Спортивный объект успешно удален"
         },
         400: {
@@ -170,7 +172,13 @@ async def hidden_facility(request: web.Request) -> web.Response:
 async def delete_facility(request: web.Request) -> web.Response:
     session = request['session']
 
-    facility = await Facility.get_by_id(session, request.match_info['id'])
+    try:
+        facility = await Facility.get_by_id(session, request.match_info['id'])
+    except IntegrityError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+    except DBAPIError:
+        raise web.HTTPBadRequest(text="facility with this id doesn't exists")
+
     await session.delete(facility)
 
     return web.json_response(status=204)

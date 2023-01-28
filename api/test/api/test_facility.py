@@ -1,4 +1,5 @@
 from aiohttp.test_utils import ClientSession
+from loguru import logger
 
 
 async def test_facility_create(cli: ClientSession):
@@ -293,6 +294,9 @@ async def test_facility_delete(cli: ClientSession):
     assert resp.status == 201
     created_facility_id = (await resp.json()).get('id')
     assert created_facility_id is not None
+
+    resp = await cli.delete('/facility/INVALID', headers=headers)
+    assert resp.status == 400
 
     # Успешное удаление объекта
     resp = await cli.delete(f'/facility/{created_facility_id}', headers=headers)
