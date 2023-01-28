@@ -3,7 +3,6 @@ from aiohttp_apispec import (
     docs,
     request_schema
 )
-from loguru import logger
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
 from db import Facility

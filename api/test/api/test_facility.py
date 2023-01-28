@@ -1,5 +1,4 @@
 from aiohttp.test_utils import ClientSession
-from loguru import logger
 
 
 async def test_facility_create(cli: ClientSession):
@@ -230,13 +229,13 @@ async def test_facility_hide(cli: ClientSession):
     resp = await cli.post('/facility', data=facility1, headers=headers)
     created_facility_id = (await resp.json()).get('id')
 
-    resp = await cli.patch(f'/facility/{created_facility_id}/hide', data={"hidden": True})
+    resp = await cli.patch(f'/facility/{created_facility_id}', data={"hidden": True})
     assert resp.status == 401
 
-    resp = await cli.patch('/facility/INVALID/hide', data={"hidden": True}, headers=headers)
+    resp = await cli.patch('/facility/INVALID', data={"hidden": True}, headers=headers)
     assert resp.status == 400
 
-    resp = await cli.patch(f'/facility/{created_facility_id}/hide', data={"hidden": True}, headers=headers)
+    resp = await cli.patch(f'/facility/{created_facility_id}', data={"hidden": True}, headers=headers)
     assert resp.status == 200
     resp_data = await resp.json()
     assert resp_data.get('hidden')
