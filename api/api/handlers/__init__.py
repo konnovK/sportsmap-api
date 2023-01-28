@@ -5,6 +5,7 @@ from .user import (
     update_self,
     delete_self,
     refresh_token,
+    get_user_by_id
     # confirmed_password_reset,
     # send_password_reset_link
 )
@@ -15,6 +16,7 @@ from .facility import (
     get_facility_by_id,
     get_all_facilities,
     search_facilities,
+    hidden_facility,
 )
 
 from aiohttp import web
@@ -32,6 +34,8 @@ ROUTES = [
     web.delete('/admin/users', delete_self),
     web.put('/admin/users', update_self),
 
+    web.get('/admin/users/{id}', get_user_by_id),
+
     # web.post('/api/admin/password/reset/link', send_password_reset_link),
     # web.post('/api/admin/password/reset/confirmed', confirmed_password_reset),
 
@@ -43,4 +47,6 @@ ROUTES = [
     web.get('/facility', get_all_facilities),
 
     web.post('/facility/search', search_facilities),
+
+    web.patch('/facility/{id}/hide', hidden_facility)
 ]

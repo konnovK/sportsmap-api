@@ -121,25 +121,25 @@ def jwt_middleware(handler):
         logger.debug(request.url.path)
         logger.debug(f"HEADER: Authorization: {request.headers.get('Authorization')}")
         if not request.headers.get('Authorization'):
-            raise web.HTTPUnauthorized()
+            raise web.HTTPUnauthorized(text='authorization error')
         if request.headers.get('Authorization').split(' ')[0] != 'Bearer':
-            raise web.HTTPUnauthorized()
+            raise web.HTTPUnauthorized(text='authorization error')
         try:
             access_token = request.headers.get('Authorization').split(' ')[1]
         except KeyError:
-            raise web.HTTPUnauthorized()
+            raise web.HTTPUnauthorized(text='authorization error')
         try:
             check_access_token = request.app['jwt'].check_access_token(access_token)
         except JWTException:
-            raise web.HTTPUnauthorized()
+            raise web.HTTPUnauthorized(text='authorization error')
         if not check_access_token:
-            raise web.HTTPUnauthorized()
+            raise web.HTTPUnauthorized(text='authorization error')
         try:
             user_email = request.app['jwt'].get_email_from_access_token(access_token)
         except JWTException:
-            raise web.HTTPUnauthorized()
+            raise web.HTTPUnauthorized(text='authorization error')
 
-        request.app['email'] = user_email
+        request['email'] = user_email
         response = await handler(request)
         return response
     return wrapper
