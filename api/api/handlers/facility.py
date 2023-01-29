@@ -196,14 +196,9 @@ async def delete_facility(request: web.Request) -> web.Response:
             "schema": ErrorResponse,
             "description": "передан id объекта, которого не существует"
         },
-        401: {
-            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
-                           "Authorization: Bearer 'текст токена') "
-        },
     },
 )
 async def get_facility_by_id(request: web.Request) -> web.Response:
-    jwt_check(request)
     session = request['session']
     try:
         facility = await Facility.get_by_id(session, request.match_info['id'])
@@ -225,14 +220,9 @@ async def get_facility_by_id(request: web.Request) -> web.Response:
             "schema": FacilityResponseList,
             "description": "Полученные объекты"
         },
-        401: {
-            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
-                           "Authorization: Bearer 'текст токена') "
-        },
     },
 )
 async def get_all_facilities(request: web.Request) -> web.Response:
-    jwt_check(request)
     session = request['session']
 
     facilities = await Facility.get_all(session)
@@ -252,10 +242,6 @@ async def get_all_facilities(request: web.Request) -> web.Response:
             "schema": FacilityResponseList,
             "description": "Полученные объекты"
         },
-        401: {
-            "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
-                           "Authorization: Bearer 'текст токена') "
-        },
         422: {
             "schema": ErrorResponse,
             "description": "Ошибка валидации входных данных"
@@ -264,7 +250,6 @@ async def get_all_facilities(request: web.Request) -> web.Response:
 )
 @request_schema(SearchQuery)
 async def search_facilities(request: web.Request) -> web.Response:
-    jwt_check(request)
     data = SearchQuery().load(await request.json())
 
     session = request['session']
