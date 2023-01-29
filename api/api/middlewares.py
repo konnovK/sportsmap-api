@@ -28,7 +28,7 @@ async def error_middleware(request: web.Request, handler):
         logger.exception(e)
         status_code = 500
         return web.json_response(ErrorResponse().load({
-            'message': 'internal server error',
+            'message': str(e),
             'detail': {}
         }), status=status_code)
 
