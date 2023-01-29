@@ -143,3 +143,34 @@ def jwt_middleware(handler):
         response = await handler(request)
         return response
     return wrapper
+
+
+def jwt_check(request: web.Request):
+    """
+    Функция для проверки jwt токена.
+
+    После проверки токена в request['email'] будет находиться email аутентифицированного пользователя
+    """
+    logger.debug('JWT Check')
+    logger.debug(request.url.path)
+    logger.debug(f"HEADER: Authorization: {request.headers.get('Authorization')}")
+    if not request.headers.get('Authorization'):
+        raise web.HTTPUnauthorized(text='authorization error')
+    if request.headers.get('Authorization').split(' ')[0] != 'Bearer':
+        raise web.HTTPUnauthorized(text='authorization error')
+    try:
+        access_token = request.headers.get('Authorization').split(' ')[1]
+    except KeyError:
+        raise web.HTTPUnauthorized(text='authorization error')
+    try:
+        check_access_token = request.app['jwt'].check_access_token(access_token)
+    except JWTException:
+        raise web.HTTPUnauthorized(text='authorization error')
+    if not check_access_token:
+        raise web.HTTPUnauthorized(text='authorization error')
+    try:
+        user_email = request.app['jwt'].get_email_from_access_token(access_token)
+    except JWTException:
+        raise web.HTTPUnauthorized(text='authorization error')
+
+    request['email'] = user_email

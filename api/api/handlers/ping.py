@@ -3,7 +3,7 @@ from aiohttp_apispec import (
     docs,
 )
 
-from api.jwt import jwt_middleware
+from api.jwt import jwt_check
 
 
 @docs(
@@ -34,6 +34,6 @@ async def ping_handler(request: web.Request) -> web.Response:
         },
     },
 )
-@jwt_middleware
 async def auth_ping_handler(request: web.Request) -> web.Response:
+    jwt_check(request)
     return web.json_response({'ping': 'pong'})

@@ -6,7 +6,7 @@ from aiohttp_apispec import (
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
 from db import User
-from api.jwt import jwt_middleware, JWTException  # , JWTException
+from api.jwt import JWTException, jwt_check  # , JWTException
 from api.schemas.error import ErrorResponse
 from api.schemas.user import (
     UserResponse,
@@ -164,8 +164,8 @@ async def refresh_token(request: web.Request) -> web.Response:
         },
     },
 )
-@jwt_middleware
 async def delete_self(request: web.Request) -> web.Response:
+    jwt_check(request)
     user_email = request['email']
 
     session = request['session']
@@ -196,8 +196,8 @@ async def delete_self(request: web.Request) -> web.Response:
     },
 )
 @request_schema(UpdateSelfRequest)
-@jwt_middleware
 async def update_self(request: web.Request) -> web.Response:
+    jwt_check(request)
     user_email = request['email']
     data = UpdateSelfRequest().load(await request.json())
 
@@ -236,8 +236,8 @@ async def update_self(request: web.Request) -> web.Response:
         },
     },
 )
-@jwt_middleware
 async def get_user_by_id(request: web.Request) -> web.Response:
+    jwt_check(request)
     session = request['session']
     try:
         user = await User.get_by_id(session, request.match_info['id'])

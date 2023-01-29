@@ -6,7 +6,7 @@ from aiohttp_apispec import (
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
 from db import Facility
-from api.jwt import jwt_middleware
+from api.jwt import jwt_check
 from api.schemas.error import ErrorResponse
 from api.schemas.facility import (
     FacilityRequest,
@@ -39,8 +39,8 @@ from api.schemas.facility import (
     },
 )
 @request_schema(FacilityRequest)
-@jwt_middleware
 async def create_facility(request: web.Request) -> web.Response:
+    jwt_check(request)
     data = FacilityRequest().load(await request.json())
 
     facility = Facility(**data)
@@ -79,8 +79,8 @@ async def create_facility(request: web.Request) -> web.Response:
     },
 )
 @request_schema(FacilityUpdateRequest)
-@jwt_middleware
 async def update_facility(request: web.Request) -> web.Response:
+    jwt_check(request)
     data = FacilityUpdateRequest().load(await request.json())
 
     facility_updated_fields = {}
@@ -128,8 +128,8 @@ async def update_facility(request: web.Request) -> web.Response:
     },
 )
 @request_schema(FacilityHiddenRequest)
-@jwt_middleware
 async def hidden_facility(request: web.Request) -> web.Response:
+    jwt_check(request)
     data = FacilityHiddenRequest().load(await request.json())
     facility_hidden = data.get('hidden')
 
@@ -167,8 +167,8 @@ async def hidden_facility(request: web.Request) -> web.Response:
         },
     },
 )
-@jwt_middleware
 async def delete_facility(request: web.Request) -> web.Response:
+    jwt_check(request)
     session = request['session']
 
     try:
@@ -202,8 +202,8 @@ async def delete_facility(request: web.Request) -> web.Response:
         },
     },
 )
-@jwt_middleware
 async def get_facility_by_id(request: web.Request) -> web.Response:
+    jwt_check(request)
     session = request['session']
     try:
         facility = await Facility.get_by_id(session, request.match_info['id'])
@@ -231,8 +231,8 @@ async def get_facility_by_id(request: web.Request) -> web.Response:
         },
     },
 )
-@jwt_middleware
 async def get_all_facilities(request: web.Request) -> web.Response:
+    jwt_check(request)
     session = request['session']
 
     facilities = await Facility.get_all(session)
@@ -263,8 +263,8 @@ async def get_all_facilities(request: web.Request) -> web.Response:
     },
 )
 @request_schema(SearchQuery)
-@jwt_middleware
 async def search_facilities(request: web.Request) -> web.Response:
+    jwt_check(request)
     data = SearchQuery().load(await request.json())
 
     session = request['session']
