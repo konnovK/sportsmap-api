@@ -531,3 +531,7 @@ async def test_facility_search(cli: ClientSession):
     assert resp_json.get('count') == 1
     for k in facility1:
         assert k in resp_json.get('data')[0]
+
+    # Успешный поиск
+    resp = await cli.post('/facility/search', data={}, headers=headers)
+    assert resp.status == 200
