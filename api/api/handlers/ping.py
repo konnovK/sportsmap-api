@@ -1,9 +1,15 @@
+import logging
+
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
 )
 
 from api.jwt import jwt_check
+from utils import setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 @docs(

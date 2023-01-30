@@ -1,13 +1,13 @@
 import ssl
 
+import logging
+
 from aiohttp import web
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from api_config import Config
 
-
-async def setup_db(app: web.Application, config: Config):
+async def setup_db(app: web.Application, config):
     db_conn_str = config.API_DB_URL
     connect_args = {}
     if config.API_DB_USE_SSL:
@@ -39,3 +39,11 @@ def hash_password(password: str | None) -> str | None:
         return None
     from hashlib import sha256
     return sha256(str(password).encode()).hexdigest()
+
+
+def setup_logger(logger: logging.Logger):
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s - %(message)s")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)

@@ -1,9 +1,14 @@
+import logging
+
 import marshmallow
 from aiohttp import web
-from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.schemas.error import ErrorResponse
+from utils import setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 @web.middleware

@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import logging
 import os
 
-from loguru import logger
 from dataclasses import dataclass
+
+from utils import setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 @dataclass

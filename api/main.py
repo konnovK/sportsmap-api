@@ -1,8 +1,13 @@
+import logging
+
 from aiohttp import web
-from loguru import logger
 
 from api_config import Config
 from api.app import create_app
+from utils import setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 def main():
