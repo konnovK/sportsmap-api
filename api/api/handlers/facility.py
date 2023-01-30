@@ -1,3 +1,5 @@
+import logging
+
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -14,6 +16,10 @@ from api.schemas.facility import (
     FacilityResponseList,
     SearchQuery, FacilityHiddenRequest, FacilityUpdateRequest
 )
+from utils import setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 @docs(

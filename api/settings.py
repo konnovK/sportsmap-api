@@ -1,24 +1,29 @@
 from __future__ import annotations
 
+import logging
 import os
 
-from loguru import logger
 from dataclasses import dataclass
+
+from utils import setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 @dataclass
-class Config:
+class Settings:
     API_HOST: str | None
     API_PORT: int | None
     API_DB_URL: str
     API_DB_USE_SSL: bool
 
     @staticmethod
-    def new() -> Config:
-        api_host = os.getenv('API_PATH')
+    def new() -> Settings:
+        api_host = os.getenv('API_HOST')
         if api_host is None:
             logger.warning('API_HOST is none, use 0.0.0.0 by default')
-            api_host = '0.0.0.0'
+            api_host = None
 
         api_port = os.getenv('API_PORT')
         if api_port is None:
@@ -37,7 +42,7 @@ class Config:
         else:
             api_db_use_ssl = True
 
-        return Config(
+        return Settings(
             API_HOST=api_host,
             API_PORT=api_port,
             API_DB_URL=api_db_url,

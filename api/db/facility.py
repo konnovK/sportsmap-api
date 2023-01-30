@@ -124,23 +124,22 @@ class Facility(Base):
     ):
         stmt = sa.select(Facility)
 
-        conditions = []
-        for f in filters:
-            cc = []
-            field = f['field']
-            eq = f.get('eq')
-            lt = f.get('lt')
-            gt = f.get('gt')
-            if eq:
-                cc.append(getattr(Facility, field) == eq)
-            if lt:
-                cc.append(getattr(Facility, field) <= lt)
-            if gt:
-                cc.append(getattr(Facility, field) >= gt)
-            conditions.append(sa.and_(*cc))
-        stmt = stmt.where(sa.or_(*conditions))
-        # for c in conditions:
-        #     stmt = stmt.where(c)
+        if filters is not None:
+            conditions = []
+            for f in filters:
+                cc = []
+                field = f['field']
+                eq = f.get('eq')
+                lt = f.get('lt')
+                gt = f.get('gt')
+                if eq:
+                    cc.append(getattr(Facility, field) == eq)
+                if lt:
+                    cc.append(getattr(Facility, field) <= lt)
+                if gt:
+                    cc.append(getattr(Facility, field) >= gt)
+                conditions.append(sa.and_(*cc))
+            stmt = stmt.where(sa.or_(*conditions))
 
         if order_by:
             if order_desc:

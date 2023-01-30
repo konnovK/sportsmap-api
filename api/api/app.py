@@ -1,3 +1,4 @@
+import logging
 from functools import partial
 from types import AsyncGeneratorType, MappingProxyType
 from typing import AsyncIterable, Mapping
@@ -5,17 +6,19 @@ from typing import AsyncIterable, Mapping
 import aiohttp_cors
 from aiohttp import web, PAYLOAD_REGISTRY
 from aiohttp_apispec import setup_aiohttp_apispec
-from loguru import logger
 
 from api.handlers import ROUTES
 from api.jwt import JWT
 from api.middlewares import transaction_middleware, error_middleware
-from api_config import Config
+from settings import Settings
 from api.payloads import AsyncGenJSONListPayload, JsonPayload
-from utils import setup_db
+from utils import setup_db, setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
-def create_app(config: Config) -> web.Application:
+def create_app(settings: Settings) -> web.Application:
     """
     Создает экземпляр приложения, готового к запуску.
     """
@@ -27,7 +30,7 @@ def create_app(config: Config) -> web.Application:
 
     app['jwt'] = JWT()
 
-    app.cleanup_ctx.append(partial(setup_db, config=config))
+    app.cleanup_ctx.append(partial(setup_db, settings=settings))
 
     app.add_routes(ROUTES)
 

@@ -1,10 +1,15 @@
+import logging
 import random
 import time
 
 from aiohttp import web
 import jwt
 from jwt import PyJWTError
-from loguru import logger
+
+from utils import setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 class JWTException(Exception):

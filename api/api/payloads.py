@@ -1,4 +1,5 @@
 import json
+import logging
 from decimal import Decimal
 from functools import partial, singledispatch
 from typing import Any
@@ -6,6 +7,11 @@ from typing import Any
 from aiohttp.payload import JsonPayload as BaseJsonPayload, Payload
 from aiohttp.typedefs import JSONEncoder
 from asyncpg import Record
+
+from utils import setup_logger
+
+logger = logging.getLogger(__name__)
+setup_logger(logger)
 
 
 @singledispatch
