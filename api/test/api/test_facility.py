@@ -388,11 +388,11 @@ async def test_facility_get_by_id(cli: ClientSession):
     assert created_facility_id is not None
 
     # Неудачное получение объекта
-    resp = await cli.get('/facility/ololol', headers=headers)
+    resp = await cli.get('/facility/ololol')
     assert resp.status == 400
 
     # Успешное получение объекта
-    resp = await cli.get(f'/facility/{created_facility_id}', headers=headers)
+    resp = await cli.get(f'/facility/{created_facility_id}')
     assert resp.status == 200
     resp_json = await resp.json()
     assert resp_json.get('id') == created_facility_id
@@ -453,7 +453,7 @@ async def test_facility_get_all(cli: ClientSession):
     assert created_facility_id is not None
 
     # Успешное получение объектов
-    resp = await cli.get('/facility', headers=headers)
+    resp = await cli.get('/facility')
     assert resp.status == 200
     resp_json = await resp.json()
     assert resp_json.get('count') == 1
@@ -525,7 +525,7 @@ async def test_facility_search(cli: ClientSession):
                 "field": "owner_name"
             }
         ]
-    }, headers=headers)
+    })
     assert resp.status == 200
     resp_json = await resp.json()
     assert resp_json.get('count') == 1
@@ -533,5 +533,5 @@ async def test_facility_search(cli: ClientSession):
         assert k in resp_json.get('data')[0]
 
     # Успешный поиск
-    resp = await cli.post('/facility/search', data={}, headers=headers)
+    resp = await cli.post('/facility/search', data={})
     assert resp.status == 200
