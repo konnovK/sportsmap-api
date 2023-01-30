@@ -7,10 +7,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 
-async def setup_db(app: web.Application, config):
-    db_conn_str = config.API_DB_URL
+async def setup_db(app: web.Application, settings):
+    db_conn_str = settings.API_DB_URL
     connect_args = {}
-    if config.API_DB_USE_SSL:
+    if settings.API_DB_USE_SSL:
         connect_args["ssl"] = ssl.create_default_context(cafile='./CA.pem')
 
     engine = create_async_engine(

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from api.app import create_app
-from api_config import Config
+from settings import Settings
 from db.schema import metadata
 
 
@@ -18,7 +18,7 @@ def loop():
 
 @pytest.fixture()
 async def setup_db(loop):
-    config = Config.new()
+    config = Settings.new()
     db_conn_str = config.API_DB_URL
     connect_args = {}
     if config.API_DB_USE_SSL:
@@ -41,7 +41,7 @@ async def setup_db(loop):
 
 @pytest.fixture
 def cli(loop, aiohttp_client, setup_db):
-    config = Config.new()
+    config = Settings.new()
     app: web.Application = create_app(config)
 
     app.cleanup_ctx.pop()
