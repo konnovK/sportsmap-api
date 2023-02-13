@@ -119,6 +119,16 @@ async def test_facility_patch(cli: ClientSession):
     resp_data = await resp.json()
     assert resp_data.get('hidden')
 
+    resp = await cli.patch(f'/facility/{created_facility_id}', data={"x": 65555}, headers=headers)
+    assert resp.status == 200
+    resp_data = await resp.json()
+    assert resp_data.get('x') == 65555
+
+    resp = await cli.patch(f'/facility/{created_facility_id}', data={"x": 235645, "y": 43132}, headers=headers)
+    assert resp.status == 400
+    resp_data = await resp.json()
+    assert resp_data.get('message') == 'too many fields'
+
 
 async def test_facility_delete(cli: ClientSession):
     # аутентификация

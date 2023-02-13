@@ -14,7 +14,7 @@ from api.schemas.facility import (
     FacilityRequest,
     FacilityResponse,
     FacilityResponseList,
-    SearchQuery, FacilityHiddenRequest, FacilityUpdateRequest
+    SearchQuery, FacilityPatchRequest, FacilityUpdateRequest
 )
 from utils import setup_logger
 
@@ -113,15 +113,15 @@ async def update_facility(request: web.Request) -> web.Response:
 
 @docs(
     tags=["Facilities"],
-    summary="Спрятать спортивный объект",
-    description="поменять поле hidden у спортивного объекта.",
+    summary="Поменять одно поле у спортивного объекта",
+    description="поменять одно поле у спортивного объекта.",
     responses={
         200: {
             "schema": FacilityResponse,
             "description": "Спортивный объект успешно обновлен"
         },
         400: {
-            "description": "Передан id объекта, которого не существует"
+            "description": "Передан id объекта, которого не существует. Или передано слишком много полей."
         },
         401: {
             "description": "Ошибка аутентификации (отсутствующий или неправильный токен аутентификации. "
@@ -133,11 +133,18 @@ async def update_facility(request: web.Request) -> web.Response:
         },
     },
 )
-@request_schema(FacilityHiddenRequest)
-async def hidden_facility(request: web.Request) -> web.Response:
+@request_schema(FacilityPatchRequest)
+async def patch_facility(request: web.Request) -> web.Response:
     jwt_check(request)
-    data = FacilityHiddenRequest().load(await request.json())
-    facility_hidden = data.get('hidden')
+    data = FacilityPatchRequest().load(await request.json())
+
+    facility_updated_fields = {}
+    for k in data:
+        if data.get(k) is not None:
+            facility_updated_fields[k] = data.get(k)
+
+    if len(facility_updated_fields) > 1:
+        raise web.HTTPBadRequest(text="too many fields")
 
     session = request['session']
 
@@ -148,7 +155,8 @@ async def hidden_facility(request: web.Request) -> web.Response:
     except DBAPIError:
         raise web.HTTPBadRequest(text="facility with this id doesn't exists")
 
-    facility.hidden = facility_hidden
+    for k in facility_updated_fields:
+        setattr(facility, k, facility_updated_fields[k])
 
     await session.flush()
 

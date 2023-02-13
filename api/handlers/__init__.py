@@ -16,7 +16,7 @@ from .facility import (
     get_facility_by_id,
     get_all_facilities,
     search_facilities,
-    hidden_facility,
+    patch_facility,
 )
 
 from aiohttp import web
@@ -48,5 +48,5 @@ ROUTES = [
 
     web.post('/facility/search', search_facilities),
 
-    web.patch('/facility/{id}', hidden_facility)
+    web.patch('/facility/{id}', patch_facility)
 ]
