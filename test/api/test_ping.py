@@ -1,3 +1,6 @@
+from test import utils
+
+
 async def test_ping(cli):
     resp = await cli.get('/ping')
     assert resp.status == 200
@@ -5,25 +8,12 @@ async def test_ping(cli):
 
 
 async def test_auth_ping(cli):
-    # Успешное создание пользователя
-    create_user_data = {
+    # аутентификация
+    await cli.post('/admin/users', data={
         'email': 'user@example.com',
         'password': 'hackme'
-    }
-    resp = await cli.post('/admin/users', data=create_user_data)
-    assert resp.status == 201
-
-    # Успешная аутентификация
-    resp = await cli.post('/admin/login', data=create_user_data)
-    assert resp.status == 200
-    resp_data = await resp.json()
-    assert resp_data.get('access_token')
-    assert resp_data.get('refresh_token')
-
-    access_token = resp_data.get('access_token')
-    headers = {
-        'Authorization': f'Bearer {access_token}'
-    }
+    })
+    headers = await utils.auth(cli, 'user@example.com', 'hackme')
 
     resp = await cli.get('/authping', headers=headers)
     assert resp.status == 200
